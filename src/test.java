@@ -1,5 +1,6 @@
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -24,7 +25,7 @@ public class test {
                 {"a", "varchar"},
                 {"b", "varchar"}
         };
-        Map<String, Field> fieldMap = new HashMap<>();
+        Map<String, Field> fieldMap = new LinkedHashMap();
         for (String[] line : lines) {
             Field field = new Field();
 
@@ -41,7 +42,9 @@ public class test {
 
         String result=Table.createTable("table1", fieldMap);
         System.out.println(result);
-        //Table table1 = Table.getTable("table1");
+        Table table1 = Table.getTable("table1");
+        result = table1.addDict(fieldMap);
+        System.out.println(result);
     }
 }
 

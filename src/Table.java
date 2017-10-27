@@ -1,7 +1,5 @@
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Table {
     private String name;
@@ -16,7 +14,7 @@ public class Table {
      */
     private Table(String name) {
         this.name = name;
-        this.fieldMap = new HashMap<>();
+        this.fieldMap = new LinkedHashMap();
         this.dictFile = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" +"/"+ userName +"/"+ dbName , name + ".dict");
         this.dataFile = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" + userName +"/"+ dbName , name + ".data");
     }
@@ -59,6 +57,12 @@ public class Table {
      * @return
      */
     public String addDict(Map<String, Field> fields) {
+        Set<String> keys=fields.keySet();
+        for (String key : keys) {
+            if (fieldMap.containsKey(key)) {
+                return "错误：存在重复添加的字段:"+key;
+            }
+        }
         try (
                 FileWriter fw = new FileWriter(dictFile, true);
                 PrintWriter pw = new PrintWriter(fw)
