@@ -100,9 +100,13 @@ public class test {
             Pattern patternAlterTable_add=Pattern.compile("alter\\stable\\s(\\w+)\\sadd\\s(\\w+\\s\\w+)\\s?;");
             Matcher matcherAlterTable_add = patternAlterTable_add.matcher(cmd);
 
-            //Pattern patternDelete=Pattern.compile("delete\\sfrom\\s(\\w+)(?:\\swhere\\s(\\w+)\\s?([<=>])\\s?([^\\s\\;]+))?((?:\\s(?:and|or)\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*)?;?");
             Pattern patternDelete=Pattern.compile("delete\\sfrom\\s(\\w+)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
             Matcher matcherDelete = patternDelete.matcher(cmd);
+
+            Pattern patternUpdate=Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
+            Matcher matcherUpdate = patternUpdate.matcher(cmd);
+
+
 
             Pattern patternDropTable=Pattern.compile("drop\\stable\\s(\\w+);");
             Matcher matcherDropTable = patternDropTable.matcher(cmd);
@@ -149,6 +153,32 @@ public class test {
                     table.delete(singleFilters);
                 }
             }
+
+            while (matcherUpdate.find()) {
+                String tableName = matcherUpdate.group(1);
+                String setStr = matcherUpdate.group(2);
+                String whereStr = matcherUpdate.group(3);
+
+                Table table = Table.getTable(tableName);
+                Map<String,Field> fieldMap = table.getFieldMap();
+                Map<String, String> data = StringUtil.parseUpdateSet(setStr);
+
+
+                List<SingleFilter> singleFilters = new ArrayList<>();
+                if (null == whereStr) {
+                    table.update(data,singleFilters);
+                }else{
+                    List<Map<String, String>> filtList = StringUtil.parseWhere(whereStr);
+                    for (Map<String, String> filtMap : filtList) {
+                        SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
+                                , filtMap.get("relationshipName"), filtMap.get("condition"));
+
+                        singleFilters.add(singleFilter);
+                    }
+                    table.update(data,singleFilters);
+                }
+            }
+
             while (matcherInsert.find()) {
                 String tableName=matcherInsert.group(1);
                 Table table = Table.getTable(tableName);

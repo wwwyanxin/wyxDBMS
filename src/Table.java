@@ -391,7 +391,7 @@ public class Table {
         //读取数据文件
         List<Map<String, String>> srcDatas = readDatas(dataFile);
         List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
-        Collections.copy(filtDatas, srcDatas);
+        //Collections.copy(filtDatas, srcDatas);
         for (SingleFilter singleFilter : singleFilters) {
             filtDatas = singleFilter.singleFiltData(filtDatas);
         }
@@ -399,7 +399,40 @@ public class Table {
         writeDatas(file,srcDatas);
     }
 
+    /**
+     * 根据给定的过滤器组，查找索引，将指定的文件数据更新
+     * @param updateDatas 更新的数据
+     * @param singleFilters 过滤器组
+     */
+    public void update(Map<String, String> updateDatas,List<SingleFilter> singleFilters) {
+        //此处查找索引
+        updateData(this.dataFile,updateDatas,singleFilters);
+    }
 
+    /**
+     * 读取给定文件，读取数据并使用过滤器组过滤，将过滤出的数据更新并写入文件
+     * @param file 数据文件
+     * @param updateDatas 更新的数据
+     * @param singleFilters 过滤器组
+     */
+    private void updateData(File file,Map<String, String> updateDatas, List<SingleFilter> singleFilters) {
+        //读取数据文件
+        List<Map<String, String>> srcDatas = readDatas(dataFile);
+        List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
+        //Collections.copy(filtDatas, srcDatas);
+        //循环过滤
+        for (SingleFilter singleFilter : singleFilters) {
+            filtDatas = singleFilter.singleFiltData(filtDatas);
+        }
+        //将过滤的数据遍历，将数据的值更新为updateDatas对应的数据
+        for (Map<String, String> filtData : filtDatas) {
+            for (Map.Entry<String, String> setData : updateDatas.entrySet()) {
+                filtData.put(setData.getKey(), setData.getValue());
+            }
+        }
+//        srcDatas.removeAll(filtDatas);
+        writeDatas(file,srcDatas);
+    }
 
 
     public static void main(String[] args) {

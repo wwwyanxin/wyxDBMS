@@ -6,7 +6,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringUtil {
-    private static Pattern relPattern =Pattern.compile("(\\w+)\\s?([<=>])\\s?([^\\s\\;]+)");
+    private final static Pattern relPattern =Pattern.compile("(\\w+)\\s?([<=>])\\s?([^\\s\\;]+)");
+   // private final static Pattern updateSetPattern=Pattern.compile("(\\w+)\\s?=\\s?([^\\s\\;]+)")
+
+
     public static List<Map<String, String>> parseWhere(String str) {
 //        Matcher relMatcher = relPattern.matcher(str);
 
@@ -50,5 +53,17 @@ public class StringUtil {
         }
 
         return fieldMap;
+    }
+
+    public static Map<String, String> parseUpdateSet(String str) {
+        Map<String, String> dataMap = new LinkedHashMap<>();
+        String[] setStrs = str.trim().split(",");
+        for (String setStr : setStrs) {
+            Matcher relMatcher = relPattern.matcher(setStr);
+            relMatcher.find();
+            //将组1做为key，组3作为value
+            dataMap.put(relMatcher.group(1), relMatcher.group(3));
+        }
+        return dataMap;
     }
 }
