@@ -19,7 +19,7 @@ public class Table {
         this.fieldMap = new LinkedHashMap();
         this.folder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" + "/" + userName + "/" + dbName + "/" + name);
         this.dictFile = new File(folder, name + ".dict");
-        this.dataFile = new File(folder, name + ".data");
+        this.dataFile = new File(folder + "/data", 1 + ".data");
     }
 
 
@@ -98,17 +98,28 @@ public class Table {
         return fieldMap;
     }
 
+
+    private static void deleteFolder(File file) {
+        if (file.isFile()) {//判断是否是文件
+            file.delete();//删除文件
+        } else if (file.isDirectory()) {//否则如果它是一个目录
+            File[] files = file.listFiles();//声明目录下所有的文件 files[];
+            for (int i = 0; i < files.length; i++) {//遍历目录下所有的文件
+                deleteFolder(files[i]);//把每个文件用这个方法进行迭代
+            }
+            file.delete();//删除文件夹
+        }
+    }
+
+
     public static String dropTable(String name) {
         if (!existTable(name)) {
             return "错误：不存在表:" + name;
         }
         File folder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" + "/" + userName + "/" + dbName + "/" + name);
-        File[] files = folder.listFiles();
-        for (File file : files) {
-            file.delete();
-        }
-        folder.delete();
+        deleteFolder(folder);
         return "success";
+
     }
 
     /**
@@ -193,7 +204,7 @@ public class Table {
     }
 
     /**
-     * 对空位填充fillStr
+     * 对空位填充fillStr,填充后的字段按照数据字段顺序排序
      *
      * @param fillStr 要填充的字符串
      * @param data    原始数据
@@ -259,29 +270,26 @@ public class Table {
         return true;
     }
 
-    /**
-     * 在插入或修改时，对语法进行检查，并对空位填充[NULL]
-     *
-     * @param srcData 未处理的原始数据
-     * @return 处理后的数据, 如果处理不成功返回null
-     *//*
-    private Map<String, String> referDict(Map<String, String> srcData) {
 
-        Map<String, String> addData = new LinkedHashMap<>();
-        //遍历数据字典,填充空位
-        for (Map.Entry<String, Field> fieldEntry : fieldMap.entrySet()) {
-            String fieldKey = fieldEntry.getKey();
-            Field field = fieldEntry.getValue();
-        }
-    }*/
+
+    /**
+     * 在插入时，对语法进行检查，并对空位填充[NULL],默认插入为追加方式
+     *
+     * @param srcData
+     * @return
+     */
+    public String insert(Map<String, String> srcData) {
+        return insert(srcData, true);
+    }
 
     /**
      * 在插入时，对语法进行检查，并对空位填充[NULL]
      *
+     * @param append  是否追加
      * @param srcData 未处理的原始数据
      * @return
      */
-    public String insert(Map<String, String> srcData) {
+    private String insert(Map<String, String> srcData, boolean append) {
         if (srcData.size() > fieldMap.size() || 0 == srcData.size()) {
             return "错误：插入数据失败，请检查语法";
         }
@@ -302,12 +310,11 @@ public class Table {
             return "错误：检查插入的类型";
         }
 
+        dataFile.getParentFile().mkdirs();
         try (
-                FileWriter fw = new FileWriter(dataFile, true);
+                FileWriter fw = new FileWriter(dataFile, append);
                 PrintWriter pw = new PrintWriter(fw)
         ) {
-            System.out.println(dataFile.exists());
-
             StringBuilder line = new StringBuilder();
             for (String value : insertData.values()) {
                 line.append(value).append(" ");
@@ -321,7 +328,92 @@ public class Table {
     }
 
 
-    public static void main(String[] args) {
 
+    /**
+     * 读取指定文件的所有数据
+     *
+     * @param dataFile 数据文件
+     * @return 数据列表
+     */
+    public List<Map<String, String>> readDatas(File dataFile) {
+        List<Map<String, String>> dataMapList = new ArrayList<>();
+
+        try (
+                FileReader fr = new FileReader(dataFile);
+                BufferedReader br = new BufferedReader(fr)
+        ) {
+
+            String line = null;
+            while (null != (line = br.readLine())) {
+                Map<String, String> dataMap = new LinkedHashMap<>();
+                String[] datas = line.split(" ");
+                Iterator<String> fieldNames = getFieldMap().keySet().iterator();
+                for (String data : datas) {
+                    String dataName = fieldNames.next();
+                    dataMap.put(dataName, data);
+                }
+                dataMapList.add(dataMap);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return dataMapList;
+    }
+
+
+    private void writeDatas(File dataFile, List<Map<String, String>> datas) {
+        if (dataFile.exists()) {
+            dataFile.delete();
+        }
+        for (Map<String, String> data : datas) {
+            insert(data);
+        }
+    }
+
+
+    /**
+     * 根据给定的过滤器组，查找索引，将指定的文件数据删除
+     * @param singleFilters 过滤器组
+     */
+    public void delete(List<SingleFilter> singleFilters) {
+        //此处查找索引
+        deleteData(this.dataFile, singleFilters);
+    }
+
+    /**
+     * 读取给定文件，读取数据并使用过滤器组过滤，将过滤后的写入文件
+     * @param file 数据文件
+     * @param singleFilters 过滤器组
+     */
+    private void deleteData(File file, List<SingleFilter> singleFilters) {
+        //读取数据文件
+        List<Map<String, String>> srcDatas = readDatas(dataFile);
+        List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
+        Collections.copy(filtDatas, srcDatas);
+        for (SingleFilter singleFilter : singleFilters) {
+            filtDatas = singleFilter.singleFiltData(filtDatas);
+        }
+        srcDatas.removeAll(filtDatas);
+        writeDatas(file,srcDatas);
+    }
+
+
+
+
+    public static void main(String[] args) {
+        User user = new User("user1", "abc");
+        //默认进入user1用户文件夹
+        File userFolder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir", user.getName());
+
+        //默认进入user1的默认数据库db1
+        File dbFolder = new File(userFolder, "db1");
+
+
+        Table.init(user.getName(), dbFolder.getName());
+        Table table1 = Table.getTable("table1");
+
+        System.out.println();
     }
 }
