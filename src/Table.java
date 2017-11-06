@@ -362,6 +362,12 @@ public class Table {
         return dataMapList;
     }
 
+    public List<Map<String, String>> read() {
+        //索引文件#########
+
+        return readDatas(dataFile);
+    }
+
 
     private void writeDatas(File dataFile, List<Map<String, String>> datas) {
         if (dataFile.exists()) {

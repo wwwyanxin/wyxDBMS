@@ -106,10 +106,11 @@ public class test {
             Pattern patternUpdate=Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
             Matcher matcherUpdate = patternUpdate.matcher(cmd);
 
-
-
             Pattern patternDropTable=Pattern.compile("drop\\stable\\s(\\w+);");
             Matcher matcherDropTable = patternDropTable.matcher(cmd);
+
+            Pattern patternSelect=Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
+            Matcher matcherSelect = patternSelect.matcher(cmd);
 
             while (matcherAlterTable_add.find()) {
                 String tableName = matcherAlterTable_add.group(1);
@@ -214,6 +215,26 @@ public class test {
                     }
                 }
                 table.insert(data);
+            }
+
+            while (matcherSelect.find()) {
+                if ("*".equals(matcherSelect.group(1))&&null==matcherSelect.group(3)) {
+                    //暂定一个表并且没有条件，之后重写
+                    String tableName = matcherSelect.group(2);
+                    Table table = Table.getTable(tableName);
+                    List<Map<String, String>> datas = table.read();
+                    Map<String, Field> fieldMap = table.getFieldMap();
+                    for (String fieldName : fieldMap.keySet()) {
+                        System.out.printf("\t|\t%s", fieldName);
+                    }
+                    System.out.println();
+                    for (Map<String, String> data : datas) {
+                        for (String fieldValue : data.values()) {
+                            System.out.printf("\t|\t%s",fieldValue);
+                        }
+                        System.out.println();
+                    }
+                }
             }
         }
 
