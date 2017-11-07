@@ -6,8 +6,10 @@ public class Table {
     private File folder;//表所在的文件夹
     private File dictFile;//数据字典
     private File dataFile;//数据
+    private File indexFile;//索引文件
     private Map<String, Field> fieldMap;//字段映射集
-    private List<Map<Integer, String>> resultDatas;//where语句过滤后(或者不使用where)的数据结果集合 key为索引(元组所在的行号)
+    //存放对所有字段的索引树
+    private Map<String,IndexTree> indexMap;
     private static String userName;//用户姓名，切换或修改用户时修改
     private static String dbName;//数据库dataBase名，切换时修改
 
@@ -17,9 +19,11 @@ public class Table {
     private Table(String name) {
         this.name = name;
         this.fieldMap = new LinkedHashMap();
-        this.folder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" + "/" + userName + "/" + dbName + "/" + name);
+        this.folder = new File("dir" + "/" + userName + "/" + dbName + "/" + name);
         this.dictFile = new File(folder, name + ".dict");
         this.dataFile = new File(folder + "/data", 1 + ".data");
+        this.indexFile = new File(folder, this.name + ".index");
+        this.indexMap = new HashMap<>();
     }
 
 
@@ -116,7 +120,7 @@ public class Table {
         if (!existTable(name)) {
             return "错误：不存在表:" + name;
         }
-        File folder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" + "/" + userName + "/" + dbName + "/" + name);
+        File folder = new File("dir" + "/" + userName + "/" + dbName + "/" + name);
         deleteFolder(folder);
         return "success";
 
@@ -129,7 +133,7 @@ public class Table {
      * @return 存在与否
      */
     public static boolean existTable(String name) {
-        File folder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir" + "/" + userName + "/" + dbName + "/" + name);
+        File folder = new File("dir" + "/" + userName + "/" + dbName + "/" + name);
         return folder.exists();
     }
 
@@ -362,6 +366,42 @@ public class Table {
         return dataMapList;
     }
 
+    /**
+     * 读取指定文件的所有数据加行号
+     *
+     * @param dataFile 数据文件
+     * @return 数据列表
+     */
+    public List<Map<String, String>> readDatasAndLineNum(File dataFile) {
+        List<Map<String, String>> dataMapList = new ArrayList<>();
+
+        try (
+                FileReader fr = new FileReader(dataFile);
+                BufferedReader br = new BufferedReader(fr)
+        ) {
+
+            String line = null;
+            long lineNum=1;
+            while (null != (line = br.readLine())) {
+                Map<String, String> dataMap = new LinkedHashMap<>();
+                String[] datas = line.split(" ");
+                Iterator<String> fieldNames = getFieldMap().keySet().iterator();
+                for (String data : datas) {
+                    String dataName = fieldNames.next();
+                    dataMap.put(dataName, data);
+                }
+                dataMap.put("[lineNum]", String.valueOf(lineNum));
+                dataMapList.add(dataMap);
+                lineNum++;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return dataMapList;
+    }
+
     public List<Map<String, String>> read() {
         //索引文件#########
 
@@ -440,11 +480,91 @@ public class Table {
         writeDatas(file,srcDatas);
     }
 
+    /**
+     * 将索引对象从索引文件读取
+     */
+    private void readIndex() {
+        try(
+                FileInputStream fis=new FileInputStream(indexFile);
+                ObjectInputStream ois=new ObjectInputStream(fis)
+                ) {
+            indexMap = (Map<String, IndexTree>) ois.readObject();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 将索引对象写入索引文件
+     */
+    private void writeIndex() {
+        try(
+                FileOutputStream fos=new FileOutputStream(indexFile);
+                ObjectOutputStream oos=new ObjectOutputStream(fos)
+                ) {
+            oos.writeObject(indexMap);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 为每个属性建立索引树，如果此属性值为[NULL]索引树将排除此条字段
+     */
+    public void buildIndex() {
+        indexMap = new HashMap<>();
+        File[] dataFiles=new File(folder, "data").listFiles();
+        //每个文件
+        for (File dataFile : dataFiles) {
+            List<Map<String,String>> datas=readDatasAndLineNum(dataFile);
+            //每个元组
+            for (Map<String, String> data : datas) {
+                //每个数据字段
+                for (Map.Entry<String, Field> fieldEntry : fieldMap.entrySet()) {
+                    String dataName = fieldEntry.getKey();
+                    String dataValue = data.get(dataName);
+                    String dataType = fieldEntry.getValue().getType();
+                    int lineNum=Integer.valueOf(data.get("[lineNum]"));
+                    //如果发现此数据为空，不添加到索引树中
+                    if ("[NULL]".equals(dataValue)) {
+                        continue;
+                    }
+
+
+                    IndexTree indexTree = indexMap.get(dataName);
+                    if (null == indexTree) {
+                        indexMap.put(dataName, new IndexTree());
+                        indexTree = indexMap.get(dataName);
+                    }
+                    IndexKey indexKey = new IndexKey(dataValue, dataType);
+                    indexTree.putIndex(indexKey,dataFile.getAbsolutePath(),lineNum);
+                }
+                /*for (Map.Entry<String, String> dataEntry : data.entrySet()) {
+                    String dataName=dataEntry.getKey();
+                    String dataValue = dataEntry.getValue();
+                    int lineNum=dataEntry.
+                    String dataType=fieldMap.get(dataName).getType();
+
+
+                    indexTree.putIndex(indexKey,dataFile.getAbsolutePath());
+
+                }*/
+            }
+        }
+    }
+
+
 
     public static void main(String[] args) {
         User user = new User("user1", "abc");
         //默认进入user1用户文件夹
-        File userFolder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir", user.getName());
+        File userFolder = new File("dir", user.getName());
 
         //默认进入user1的默认数据库db1
         File dbFolder = new File(userFolder, "db1");
@@ -453,6 +573,9 @@ public class Table {
         Table.init(user.getName(), dbFolder.getName());
         Table table1 = Table.getTable("table1");
 
-        System.out.println();
+        table1.readIndex();
+
+        table1.buildIndex();
+        table1.writeIndex();
     }
 }

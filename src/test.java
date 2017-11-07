@@ -4,10 +4,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class test {
+    private static final Pattern patternInsert=Pattern.compile("insert\\s+into\\s+(\\w+)(\\(((\\w+,?)+)\\))?\\s+\\w+\\((([^\\)]+,?)+)\\);?");
+    private static final Pattern patternCreateTable=Pattern.compile("create\\stable\\s(\\w+)\\s?\\(((?:\\s?\\w+\\s\\w+,?)+)\\)\\s?;");
+    private static final Pattern patternAlterTable_add=Pattern.compile("alter\\stable\\s(\\w+)\\sadd\\s(\\w+\\s\\w+)\\s?;");
+    private static final Pattern patternDelete=Pattern.compile("delete\\sfrom\\s(\\w+)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
+    private static final Pattern patternUpdate=Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
+    private static final Pattern patternDropTable=Pattern.compile("drop\\stable\\s(\\w+);");
+    private static final Pattern patternSelect=Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
+
     public static void main(String[] args) {
         User user = new User("user1", "abc");
         //默认进入user1用户文件夹
-        File userFolder = new File("/Users/ouhikoshin/IdeaProjects/wyxDBMS/dir", user.getName());
+        File userFolder = new File("dir", user.getName());
 
         //默认进入user1的默认数据库db1
         File dbFolder = new File(userFolder, "db1");
@@ -88,35 +96,28 @@ public class test {
 */
 
 
+
         Scanner sc = new Scanner(System.in);
         String cmd;
         while (!"exit".equals(cmd = sc.nextLine())) {
-            Pattern patternInsert=Pattern.compile("insert\\s+into\\s+(\\w+)(\\(((\\w+,?)+)\\))?\\s+\\w+\\((([^\\)]+,?)+)\\);?");
             Matcher matcherInsert = patternInsert.matcher(cmd);
-
-            Pattern patternCreateTable=Pattern.compile("create\\stable\\s(\\w+)\\s?\\(((?:\\s?\\w+\\s\\w+,?)+)\\)\\s?;");
             Matcher matcherCreateTable = patternCreateTable.matcher(cmd);
-
-            Pattern patternAlterTable_add=Pattern.compile("alter\\stable\\s(\\w+)\\sadd\\s(\\w+\\s\\w+)\\s?;");
             Matcher matcherAlterTable_add = patternAlterTable_add.matcher(cmd);
-
-            Pattern patternDelete=Pattern.compile("delete\\sfrom\\s(\\w+)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
             Matcher matcherDelete = patternDelete.matcher(cmd);
-
-            Pattern patternUpdate=Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
             Matcher matcherUpdate = patternUpdate.matcher(cmd);
-
-            Pattern patternDropTable=Pattern.compile("drop\\stable\\s(\\w+);");
             Matcher matcherDropTable = patternDropTable.matcher(cmd);
-
-            Pattern patternSelect=Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
             Matcher matcherSelect = patternSelect.matcher(cmd);
+
 
             while (matcherAlterTable_add.find()) {
                 String tableName = matcherAlterTable_add.group(1);
                 String propertys = matcherAlterTable_add.group(2);
                 Map<String,Field> fieldMap=StringUtil.parseCreateTable(propertys);
                 Table table = Table.getTable(tableName);
+                if (null == table) {
+                    System.out.println("未找到表："+tableName);
+                    break;
+                }
                 System.out.println(table.addDict(fieldMap));
             }
 
@@ -137,6 +138,10 @@ public class test {
                 String tableName=matcherDelete.group(1);
                 String whereStr = matcherDelete.group(2);
                 Table table = Table.getTable(tableName);
+                if (null == table) {
+                    System.out.println("未找到表："+tableName);
+                    break;
+                }
 
                 Map<String,Field> fieldMap = table.getFieldMap();
 
@@ -161,6 +166,10 @@ public class test {
                 String whereStr = matcherUpdate.group(3);
 
                 Table table = Table.getTable(tableName);
+                if (null == table) {
+                    System.out.println("未找到表："+tableName);
+                    break;
+                }
                 Map<String,Field> fieldMap = table.getFieldMap();
                 Map<String, String> data = StringUtil.parseUpdateSet(setStr);
 
@@ -183,6 +192,10 @@ public class test {
             while (matcherInsert.find()) {
                 String tableName=matcherInsert.group(1);
                 Table table = Table.getTable(tableName);
+                if (null == table) {
+                    System.out.println("未找到表："+tableName);
+                    break;
+                }
                 Map dictMap = table.getFieldMap();
                 Map<String, String> data = new HashMap<>();
 
@@ -222,6 +235,10 @@ public class test {
                     //暂定一个表并且没有条件，之后重写
                     String tableName = matcherSelect.group(2);
                     Table table = Table.getTable(tableName);
+                    if (null == table) {
+                        System.out.println("未找到表："+tableName);
+                        break;
+                    }
                     List<Map<String, String>> datas = table.read();
                     Map<String, Field> fieldMap = table.getFieldMap();
                     for (String fieldName : fieldMap.keySet()) {
