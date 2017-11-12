@@ -43,12 +43,13 @@ public class IndexKey implements Comparable,Serializable {
         }
 
         IndexKey indexKey = (IndexKey) o;
-
+        //type可以推断出来，所以忽略以提升效率
         return value != null ? value.equals(indexKey.value) : indexKey.value == null;
     }
 
     @Override
     public int hashCode() {
+        //type可以推断出来，所以忽略以提升效率
         return value != null ? value.hashCode() : 0;
     }
 

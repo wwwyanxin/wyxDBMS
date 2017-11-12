@@ -5,13 +5,15 @@ public class Table {
     private String name;//表名
     private File folder;//表所在的文件夹
     private File dictFile;//数据字典
-    private File dataFile;//数据
+    private LinkedHashSet<File> dataFileSet;
     private File indexFile;//索引文件
     private Map<String, Field> fieldMap;//字段映射集
     //存放对所有字段的索引树
-    private Map<String,IndexTree> indexMap;
+    private Map<String, IndexTree> indexMap;
     private static String userName;//用户姓名，切换或修改用户时修改
     private static String dbName;//数据库dataBase名，切换时修改
+
+    private static long lineNumConfine = 10;
 
     /**
      * 只能静态创建，所以构造函数私有
@@ -21,7 +23,8 @@ public class Table {
         this.fieldMap = new LinkedHashMap();
         this.folder = new File("dir" + "/" + userName + "/" + dbName + "/" + name);
         this.dictFile = new File(folder, name + ".dict");
-        this.dataFile = new File(folder + "/data", 1 + ".data");
+        this.dataFileSet = new LinkedHashSet<>();
+        //this.dataFile = new File(folder + "/data", 1 + ".data");
         this.indexFile = new File(folder, this.name + ".index");
         this.indexMap = new HashMap<>();
     }
@@ -95,6 +98,18 @@ public class Table {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        File[] dataFiles = new File(table.folder, "data").listFiles();
+        if (null != dataFiles && 0 != dataFiles.length) {
+            for (int i = 1; i <= dataFiles.length; i++) {
+                File dataFile = new File(table.folder + "/data", i + ".data");
+                table.dataFileSet.add(dataFile);
+            }
+        }
+
+        if (table.indexFile.exists()) {
+            table.readIndex();
+        }
+
         return table;
     }
 
@@ -275,25 +290,61 @@ public class Table {
     }
 
 
-
     /**
-     * 在插入时，对语法进行检查，并对空位填充[NULL],默认插入为追加方式
+     * 插入数据到最后一个数据文件，如果数据行数超过限定值，写入下一个文件中
      *
      * @param srcData
      * @return
      */
     public String insert(Map<String, String> srcData) {
-        return insert(srcData, true);
+        File lastFile = null;
+        int lineNum =0;
+        int fileNum = 0;
+        for (File file : dataFileSet) {
+            fileNum++;
+            lastFile = file;
+            lineNum = fileLineNum(lastFile);
+        }
+        //如果没有一个文件，新建1.data
+        if (null == lastFile || 0 == fileNum) {
+            lastFile = new File(folder + "/data", 1 + ".data");
+            dataFileSet.add(lastFile);
+            lineNum=0;
+        } else if (lineNumConfine <= fileLineNum(lastFile)) {
+            //如果最后一个文件大于行数限制，新建数据文件
+            lastFile = new File(folder + "/data", fileNum + 1 + ".data");
+            dataFileSet.add(lastFile);
+            lineNum=0;
+        }
+        //添加索引
+        for (Map.Entry<String, Field> fieldEntry : fieldMap.entrySet()) {
+            String dataName = fieldEntry.getKey();
+            String dataValue = srcData.get(dataName);
+            //如果发现此数据为空，不添加到索引树中
+            if (null == dataValue || "[NULL]".equals(dataValue)) {
+                continue;
+            }
+            String dataType = fieldEntry.getValue().getType();
+
+            IndexTree indexTree = indexMap.get(dataName);
+            if (null == indexTree) {
+                indexMap.put(dataName, new IndexTree());
+                indexTree = indexMap.get(dataName);
+            }
+            IndexKey indexKey = new IndexKey(dataValue, dataType);
+            indexTree.putIndex(indexKey, lastFile.getAbsolutePath(), lineNum);
+        }
+        writeIndex();
+        return insertData(lastFile, srcData);
     }
 
     /**
      * 在插入时，对语法进行检查，并对空位填充[NULL]
      *
-     * @param append  是否追加
      * @param srcData 未处理的原始数据
      * @return
      */
-    private String insert(Map<String, String> srcData, boolean append) {
+    private String insertData(File file, Map<String, String> srcData) {
         if (srcData.size() > fieldMap.size() || 0 == srcData.size()) {
             return "错误：插入数据失败，请检查语法";
         }
@@ -314,9 +365,9 @@ public class Table {
             return "错误：检查插入的类型";
         }
 
-        dataFile.getParentFile().mkdirs();
+        file.getParentFile().mkdirs();
         try (
-                FileWriter fw = new FileWriter(dataFile, append);
+                FileWriter fw = new FileWriter(file, true);
                 PrintWriter pw = new PrintWriter(fw)
         ) {
             StringBuilder line = new StringBuilder();
@@ -328,10 +379,29 @@ public class Table {
             e.printStackTrace();
             return "写入异常";
         }
+
+        buildIndex();
+        writeIndex();
         return "success";
     }
 
 
+    private int fileLineNum(File file) {
+        int num = 0;
+        try (
+                FileReader fr = new FileReader(file);
+                BufferedReader br = new BufferedReader(fr)
+        ) {
+            while (null != br.readLine()) {
+                num++;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return num;
+    }
 
     /**
      * 读取指定文件的所有数据
@@ -381,7 +451,7 @@ public class Table {
         ) {
 
             String line = null;
-            long lineNum=1;
+            long lineNum = 1;
             while (null != (line = br.readLine())) {
                 Map<String, String> dataMap = new LinkedHashMap<>();
                 String[] datas = line.split(" ");
@@ -403,9 +473,12 @@ public class Table {
     }
 
     public List<Map<String, String>> read() {
-        //索引文件#########
-
-        return readDatas(dataFile);
+        //索引文件***
+        List<Map<String, String>> datas = new ArrayList<>();
+        for (File file : dataFileSet) {
+            datas.addAll(readDatas(file));
+        }
+        return datas;
     }
 
 
@@ -414,56 +487,70 @@ public class Table {
             dataFile.delete();
         }
         for (Map<String, String> data : datas) {
-            insert(data);
+            insertData(dataFile, data);
         }
     }
 
 
     /**
      * 根据给定的过滤器组，查找索引，将指定的文件数据删除
+     *
      * @param singleFilters 过滤器组
      */
     public void delete(List<SingleFilter> singleFilters) {
         //此处查找索引
-        deleteData(this.dataFile, singleFilters);
+        //deleteData(this.dataFile, singleFilters);
+        Set<File> fileSet = findFileSet(singleFilters);
+        for (File file : fileSet) {
+            deleteData(file, singleFilters);
+        }
+        buildIndex();
+        writeIndex();
     }
 
     /**
      * 读取给定文件，读取数据并使用过滤器组过滤，将过滤后的写入文件
-     * @param file 数据文件
+     *
+     * @param file          数据文件
      * @param singleFilters 过滤器组
      */
     private void deleteData(File file, List<SingleFilter> singleFilters) {
         //读取数据文件
-        List<Map<String, String>> srcDatas = readDatas(dataFile);
+        List<Map<String, String>> srcDatas = readDatas(file);
         List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
         //Collections.copy(filtDatas, srcDatas);
         for (SingleFilter singleFilter : singleFilters) {
             filtDatas = singleFilter.singleFiltData(filtDatas);
         }
         srcDatas.removeAll(filtDatas);
-        writeDatas(file,srcDatas);
+        writeDatas(file, srcDatas);
     }
 
     /**
      * 根据给定的过滤器组，查找索引，将指定的文件数据更新
-     * @param updateDatas 更新的数据
+     *
+     * @param updateDatas   更新的数据
      * @param singleFilters 过滤器组
      */
-    public void update(Map<String, String> updateDatas,List<SingleFilter> singleFilters) {
-        //此处查找索引
-        updateData(this.dataFile,updateDatas,singleFilters);
+    public void update(Map<String, String> updateDatas, List<SingleFilter> singleFilters) {
+        Set<File> fileSet = findFileSet(singleFilters);
+        for (File file : fileSet) {
+            updateData(file, updateDatas, singleFilters);
+        }
+        buildIndex();
+        writeIndex();
     }
 
     /**
      * 读取给定文件，读取数据并使用过滤器组过滤，将过滤出的数据更新并写入文件
-     * @param file 数据文件
-     * @param updateDatas 更新的数据
+     *
+     * @param file          数据文件
+     * @param updateDatas   更新的数据
      * @param singleFilters 过滤器组
      */
-    private void updateData(File file,Map<String, String> updateDatas, List<SingleFilter> singleFilters) {
+    private void updateData(File file, Map<String, String> updateDatas, List<SingleFilter> singleFilters) {
         //读取数据文件
-        List<Map<String, String>> srcDatas = readDatas(dataFile);
+        List<Map<String, String>> srcDatas = readDatas(file);
         List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
         //Collections.copy(filtDatas, srcDatas);
         //循环过滤
@@ -477,17 +564,20 @@ public class Table {
             }
         }
 //        srcDatas.removeAll(filtDatas);
-        writeDatas(file,srcDatas);
+        writeDatas(file, srcDatas);
     }
 
     /**
      * 将索引对象从索引文件读取
      */
     private void readIndex() {
-        try(
-                FileInputStream fis=new FileInputStream(indexFile);
-                ObjectInputStream ois=new ObjectInputStream(fis)
-                ) {
+        if (!indexFile.exists()) {
+            return;
+        }
+        try (
+                FileInputStream fis = new FileInputStream(indexFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)
+        ) {
             indexMap = (Map<String, IndexTree>) ois.readObject();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -502,10 +592,10 @@ public class Table {
      * 将索引对象写入索引文件
      */
     private void writeIndex() {
-        try(
-                FileOutputStream fos=new FileOutputStream(indexFile);
-                ObjectOutputStream oos=new ObjectOutputStream(fos)
-                ) {
+        try (
+                FileOutputStream fos = new FileOutputStream(indexFile);
+                ObjectOutputStream oos = new ObjectOutputStream(fos)
+        ) {
             oos.writeObject(indexMap);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -519,22 +609,22 @@ public class Table {
      */
     public void buildIndex() {
         indexMap = new HashMap<>();
-        File[] dataFiles=new File(folder, "data").listFiles();
+        File[] dataFiles = new File(folder, "data").listFiles();
         //每个文件
         for (File dataFile : dataFiles) {
-            List<Map<String,String>> datas=readDatasAndLineNum(dataFile);
+            List<Map<String, String>> datas = readDatasAndLineNum(dataFile);
             //每个元组
             for (Map<String, String> data : datas) {
                 //每个数据字段
                 for (Map.Entry<String, Field> fieldEntry : fieldMap.entrySet()) {
                     String dataName = fieldEntry.getKey();
                     String dataValue = data.get(dataName);
-                    String dataType = fieldEntry.getValue().getType();
-                    int lineNum=Integer.valueOf(data.get("[lineNum]"));
                     //如果发现此数据为空，不添加到索引树中
                     if ("[NULL]".equals(dataValue)) {
                         continue;
                     }
+                    String dataType = fieldEntry.getValue().getType();
+                    int lineNum = Integer.valueOf(data.get("[lineNum]"));
 
 
                     IndexTree indexTree = indexMap.get(dataName);
@@ -543,7 +633,7 @@ public class Table {
                         indexTree = indexMap.get(dataName);
                     }
                     IndexKey indexKey = new IndexKey(dataValue, dataType);
-                    indexTree.putIndex(indexKey,dataFile.getAbsolutePath(),lineNum);
+                    indexTree.putIndex(indexKey, dataFile.getAbsolutePath(), lineNum);
                 }
                 /*for (Map.Entry<String, String> dataEntry : data.entrySet()) {
                     String dataName=dataEntry.getKey();
@@ -557,8 +647,31 @@ public class Table {
                 }*/
             }
         }
+
+        //重新填充dataFileSet
+        if (null != dataFiles && 0 != dataFiles.length) {
+            for (int i = 1; i <= dataFiles.length; i++) {
+                File dataFile = new File(folder + "/data", i + ".data");
+                dataFileSet.add(dataFile);
+            }
+        }
     }
 
+    private Set<File> findFileSet(List<SingleFilter> singleFilters) {
+        Set<File> fileSet = new HashSet<>();
+        //此处查找索引
+        for (SingleFilter singleFilter : singleFilters) {
+            String fieldName = singleFilter.getField().getName();
+            String fieldType = singleFilter.getField().getType();
+            Relationship relationship = singleFilter.getRelationship();
+            String condition = singleFilter.getCondition();
+
+            IndexKey indexKey = new IndexKey(condition, fieldType);
+            IndexTree indexTree = indexMap.get(fieldName);
+            fileSet.addAll(indexTree.getFiles(relationship, indexKey));
+        }
+        return fileSet;
+    }
 
 
     public static void main(String[] args) {

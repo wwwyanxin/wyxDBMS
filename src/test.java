@@ -24,76 +24,7 @@ public class test {
 
         Table.init(user.getName(), dbFolder.getName());
 
-/*      String[][] lines = {
-                {"id", "int", "*"},
-                {"name", "varchar"},
-                {"height", "double"},
-                {"sex","varchar"}
-        };
-        String[][] newLines = {
-                {"age", "int"},
-                {"weight", "double"},
-               // {"height", "double"},
-               // {"sex","varchar"}
-        };
-        //Map<String, Field> fieldMap = new LinkedHashMap();
-        Map<String, Field> newFieldMap = new LinkedHashMap<>();
-        for (String[] line : newLines) {
-            Field field = new Field();
 
-            field.setName(line[0]);
-            field.setType(line[1]);
-            //如果是主键字段后面加*
-            if (3 == line.length && "*".equals(line[2])) {
-                field.setPrimaryKey(true);
-            } else {
-                field.setPrimaryKey(false);
-            }
-            newFieldMap.put(line[0], field);
-        }
-        Table table1 = Table.getTable("table1");
-        table1.addDict(newFieldMap);
-
-       String result="";
-
-        //result = Table.dropTable("table1");
-        System.out.println(result);
-        result=Table.createTable("table1", fieldMap);
-        System.out.println(result);
-        Table table1 = Table.getTable("table1");
-        //result = table1.addDict(fieldMap);
-        //System.out.println(result);
-        //result = table1.deleteDict("b");
-        //System.out.println(result);
-
-        //String[] testStr = "aa bb &null; &null;".split(" ");
-        //System.out.println(Arrays.toString(testStr));
-
-        String[][] insertStrs = {
-                {"1", "张三", "1.7", "men"},
-                {"2", "李四", "women"},
-                {"3", "王二", "men"},
-                {"4", "大黑", "1"},
-                {}
-        };
-        Map<String, Field> dictMap = table1.getFieldMap();
-
-        List<Map<String, String> > strs = new ArrayList();
-        for (String[] insertStr : insertStrs) {
-            Iterator<String> fieldIterator = dictMap.keySet().iterator();
-            Map<String, String> data = new LinkedHashMap<>();
-            for (String fieldStr : insertStr) {
-                String fieldKey=fieldIterator.next();
-                data.put(fieldKey, fieldStr);
-            }
-            strs.add(data);
-        }
-        for (Map<String, String> insertMap : strs) {
-            result=table1.insert(insertMap);
-            System.out.println(result);
-        }
-
-*/
 
 
 
@@ -199,17 +130,17 @@ public class test {
                 Map dictMap = table.getFieldMap();
                 Map<String, String> data = new HashMap<>();
 
-                String[] fieldValues=matcherInsert.group(5).split(",");
+                String[] fieldValues=matcherInsert.group(5).trim().split(",");
                 //如果插入指定的字段
                 if (null != matcherInsert.group(2)) {
-                    String[] fieldNames = matcherInsert.group(3).split(",");
+                    String[] fieldNames = matcherInsert.group(3).trim().split(",");
                     //如果insert的名值数量不相等，错误
                     if (fieldNames.length != fieldValues.length) {
                         return;
                     }
                     for (int i = 0; i < fieldNames.length; i++) {
-                        String fieldName = fieldNames[i];
-                        String fieldValue = fieldValues[i];
+                        String fieldName = fieldNames[i].trim();
+                        String fieldValue = fieldValues[i].trim();
                         //如果在数据字典中未发现这个字段，返回错误
                         if (!dictMap.containsKey(fieldName)) {
                             return;
@@ -220,7 +151,7 @@ public class test {
                     Set<String> fieldNames=dictMap.keySet();
                     int i=0;
                     for (String fieldName : fieldNames) {
-                        String fieldValue = fieldValues[i];
+                        String fieldValue = fieldValues[i].trim();
 
                         data.put(fieldName, fieldValue);
 

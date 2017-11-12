@@ -37,4 +37,21 @@ public class SingleFilter {
         }
         return datas;
     }
+
+    public Field getField() {
+        return field;
+    }
+
+    public String getRelationshipName() {
+        return relationshipName;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public Relationship getRelationship() {
+        Relationship relationship = Relationship.parseRel(relationshipName);
+        return relationship;
+    }
 }

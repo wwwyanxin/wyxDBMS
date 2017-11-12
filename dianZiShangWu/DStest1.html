@@ -1,5 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
+<script>
+    function check() {
+        var name=document.getElementById("name");
+        name=name.value;
+        if(null==name||0==name.length){
+            alert("名字不能为空");
+            return false;
+        }
+
+        var password1 = document.getElementById("password1");
+        password1=password1.value;
+        if(null==password1||0==password1.length){
+            alert("密码不能为空");
+            return false;
+        }
+
+        var password2 = document.getElementById("password2");
+        password2=password2.value;
+        if(null==password2||0==password2.length){
+            alert("确认密码不能为空");
+            return false;
+        }
+        var phone=document.getElementById("phone");
+        phone=phone.value;
+        if(null==phone||0==phone.length){
+            alert("手机号不能为空");
+            return false;
+        }
+        var yanzhengma=document.getElementById("yanzhengma");
+        yanzhengma=yanzhengma.value;
+        if(null==yanzhengma||0==yanzhengma.length){
+            alert("验证码不能为空");
+            return false;
+        }
+
+        if(password1.length<6||password1.length>20) {
+            alert("密码长度应为6-20");
+            return false;
+        }
+
+        if(password1!=password2){
+            alert("验证密码和密码不相同");
+            return false;
+        }
+
+        var myreg = /^1\d+$/;
+        if(!myreg.test(phone)||phone.length!=11)
+        {
+            alert('请输入有效的手机号码！');
+            return false;
+        }
+
+        return true;
+    }
+</script>
+
+<style>
+    body {
+        background-color: #FFFFFF;
+    }
+
+    form {
+        font-family: "Microsoft YaHei";
+        font-size: 12pt;
+    }
+    form table tr{
+        width:400px;
+    }
+    label{
+        width: 200px;
+        height:30px;
+    }
+
+    .text{
+        width:200px;
+        height:28px;
+    }
+    .yanzhengma{
+        width:115px;
+        height: 28px;
+    }
+    .infoDiv{
+        padding: 25px;
+    }
+
+    .heiDaLou {
+        position: absolute;
+        top:200px;
+        left:50%;
+
+        size: 180px 90px;
+    }
+</style>
+
+
 <head>
     <meta charset="UTF-8">
     <title>注册例子</title>
@@ -16,92 +111,108 @@
 <body>
 
 
-<div>
-    <table>
-        <tr>
-            <td>昵称</td>
-            <td>
-                <input type="text">
-            </td>
+<div class="infoDiv">
+    <form action="#nowhere" method="post">
+        <table>
+            <tr>
+                <td><label>昵称</label></td>
+                <td>
+                    <input type="text" class="text" id="name"><span style="color:red">*</span>
+                </td>
+                <td></td>
 
-        </tr>
-        <tr>
-            <td>邮箱</td>
-            <td>
-                <input type="email">
-            </td>
-        </tr>
-        <tr>
-            <td>密码</td>
-            <td>
-                <input type="password">
-            </td>
-        </tr>
-        <tr>
-            <td>再次输入密码</td>
-            <td>
-                <input type="password">
-            </td>
-        </tr>
-        <tr>
-            <td>性别</td>
-            <td>
-                男：<input type="radio" name="sex">
-                女：<input type="radio" name="sex">
-            </td>
-        </tr>
-        <tr>
-            <td>爱好</td>
-            <td>
-                运动：<input type="checkbox">
-                阅读：<input type="checkbox">
-                编码：<input type="checkbox">
-            </td>
-        </tr>
-        <tr>
-            <td>血型</td>
-            <td>
-                <select>
-                    <option>不确定</option>
-                    <option>A</option>
-                    <option>B</option>
-                    <option>AB</option>
-                    <option>O</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td>头像</td>
-            <td>
-                <input type="file">
-            </td>
-        </tr>
-        <tr>
-            <td></td>
-            <td>
-                <input type="submit" value="提交">
-                <input type="reset" value="还原">
-            </td>
-        </tr>
-
-
-    </table>
-
+            </tr>
+            <tr>
+                <td><label>手机号</label></td>
+                <td>
+                    <input type="text" class="text" id="phone"><span style="color:red">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>验证码</label></td>
+                <td>
+                    <input type="text" class="yanzhengma" id="yanzhengma">
+                    <button type="button">获取验证码</button>
+                    <span style="color:red">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>邮箱</label></td>
+                <td>
+                    <input type="email" class="text"><span style="color:red">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>密码</label></td>
+                <td>
+                    <input type="password" class="text" id="password1"><span style="color:red">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>再次输入密码</label></td>
+                <td>
+                    <input type="password" class="text" id="password2"><span style="color:red">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>性别</label></td>
+                <td>
+                    男：<input type="radio" name="sex">
+                    女：<input type="radio" name="sex">
+                </td>
+            </tr>
+            <tr>
+                <td><label>爱好</label></td>
+                <td>
+                    运动：<input type="checkbox">
+                    阅读：<input type="checkbox">
+                    编码：<input type="checkbox">
+                </td>
+            </tr>
+            <tr>
+                <td><label>血型</label></td>
+                <td>
+                    <select>
+                        <option>不确定</option>
+                        <option>A</option>
+                        <option>B</option>
+                        <option>AB</option>
+                        <option>O</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label>头像</label></td>
+                <td>
+                    <img src="head-icon.jpg" height="30" width="35"/>
+                    <input type="file">
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <input type="submit" value="提交" onclick="return check()">
+                    <input type="reset" value="还原">
+                </td>
+            </tr>
+        </table>
+    </form>
 </div>
-<div style="float: right; position: absolute;top: 10px;right: 270px;">
-    <label>
+<div style="padding: 25px">
         <p>个人描述：</p>
-        <textarea style="height: 200px;width: 370px"></textarea>
-    </label>
+        <textarea style="height: 100px;width: 250px"></textarea>
 </div>
 
-<div style="position: absolute;bottom: 10px;left: 440px">
-    <div>
+<div class="heiDaLou" >
+    <img src="register-img.jpg" height="80%" width="80%"/>
+</div>
+
+<div style="position: absolute;bottom: 0px;left: 400px">
+
         <hr>
-        <p>
+
             Copright&#169;2012-2016,WiseIsLand,All Right Reserved
-        </p>
-    </div>
+
 </div>
 
 </body>
