@@ -108,6 +108,9 @@ public class Table {
 
         if (table.indexFile.exists()) {
             table.readIndex();
+        } else {
+            table.buildIndex();
+            //table.writeIndex();
         }
 
         return table;
@@ -605,6 +608,17 @@ public class Table {
     }
 
     /**
+     * 删除建立的索引
+     */
+    public String deleteIndex() {
+        if (indexFile.exists()) {
+            indexFile.delete();
+            return "success";
+        }
+        return "失败";
+    }
+
+    /**
      * 为每个属性建立索引树，如果此属性值为[NULL]索引树将排除此条字段
      */
     public void buildIndex() {
@@ -684,9 +698,9 @@ public class Table {
 
 
         Table.init(user.getName(), dbFolder.getName());
-        Table table1 = Table.getTable("table1");
+        Table table1 = Table.getTable("employee");
 
-        table1.readIndex();
+        //table1.readIndex();
 
         table1.buildIndex();
         table1.writeIndex();

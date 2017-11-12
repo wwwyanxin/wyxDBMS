@@ -27,9 +27,9 @@ public class IndexTree implements Serializable{
                 for (IndexNode node : indexNodeMap.values()) {
                     indexNodeList.add(node);
                 }
-                for (IndexNode node : indexNodeMap.values()) {
+                /*for (IndexNode node : indexNodeMap.values()) {
                     indexNodeList.add(node);
-                }
+                }*/
                 break;
             case EQUAL_TO:
                 IndexNode indexNode = treeMap.get(condition);

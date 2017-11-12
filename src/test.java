@@ -11,6 +11,7 @@ public class test {
     private static final Pattern patternUpdate=Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
     private static final Pattern patternDropTable=Pattern.compile("drop\\stable\\s(\\w+);");
     private static final Pattern patternSelect=Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
+    private static final Pattern patternDeleteIndex=Pattern.compile("delete\\sindex\\s(\\w+)\\s?;");
 
     public static void main(String[] args) {
         User user = new User("user1", "abc");
@@ -38,6 +39,7 @@ public class test {
             Matcher matcherUpdate = patternUpdate.matcher(cmd);
             Matcher matcherDropTable = patternDropTable.matcher(cmd);
             Matcher matcherSelect = patternSelect.matcher(cmd);
+            Matcher matcherDeleteIndex = patternDeleteIndex.matcher(cmd);
 
 
             while (matcherAlterTable_add.find()) {
@@ -183,6 +185,12 @@ public class test {
                         System.out.println();
                     }
                 }
+            }
+
+            while (matcherDeleteIndex.find()) {
+                String tableName = matcherDeleteIndex.group(1);
+                Table table = Table.getTable(tableName);
+                System.out.println(table.deleteIndex());
             }
         }
 
