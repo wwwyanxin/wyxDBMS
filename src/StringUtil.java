@@ -1,14 +1,29 @@
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringUtil {
-    private final static Pattern relPattern =Pattern.compile("(\\w+)\\s?([<=>])\\s?([^\\s\\;]+)");
+    private final static Pattern relPattern =Pattern.compile("(\\w+(?:\\.\\w+)?)\\s?([<=>])\\s?([^\\s\\;]+)");
    // private final static Pattern updateSetPattern=Pattern.compile("(\\w+)\\s?=\\s?([^\\s\\;]+)")
 
+    //解析投影
+    public static List<String> parseProjection(String str) {
+        List<String> projectionList = new ArrayList<>();
+        String[] projectionNames = str.trim().split(",");
+        for (String projectionName : projectionNames) {
+            projectionList.add(projectionName.trim());
+        }
+        return projectionList;
+    }
+
+    public static List<String> parseFrom(String str) {
+        String[] tableNames = str.trim().split(",");
+        List<String> tableNameList = new ArrayList<>();
+        for (String tableName : tableNames) {
+            tableNameList.add(tableName.trim());
+        }
+        return tableNameList;
+    }
 
     public static List<Map<String, String>> parseWhere(String str) {
 //        Matcher relMatcher = relPattern.matcher(str);

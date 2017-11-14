@@ -150,7 +150,7 @@ public class Table {
      * @param name 表名
      * @return 存在与否
      */
-    public static boolean existTable(String name) {
+    private static boolean existTable(String name) {
         File folder = new File("dir" + "/" + userName + "/" + dbName + "/" + name);
         return folder.exists();
     }
@@ -301,7 +301,7 @@ public class Table {
      */
     public String insert(Map<String, String> srcData) {
         File lastFile = null;
-        int lineNum =0;
+        int lineNum = 0;
         int fileNum = 0;
         for (File file : dataFileSet) {
             fileNum++;
@@ -312,12 +312,12 @@ public class Table {
         if (null == lastFile || 0 == fileNum) {
             lastFile = new File(folder + "/data", 1 + ".data");
             dataFileSet.add(lastFile);
-            lineNum=0;
+            lineNum = 0;
         } else if (lineNumConfine <= fileLineNum(lastFile)) {
             //如果最后一个文件大于行数限制，新建数据文件
             lastFile = new File(folder + "/data", fileNum + 1 + ".data");
             dataFileSet.add(lastFile);
-            lineNum=0;
+            lineNum = 0;
         }
         //添加索引
         for (Map.Entry<String, Field> fieldEntry : fieldMap.entrySet()) {
@@ -412,7 +412,7 @@ public class Table {
      * @param dataFile 数据文件
      * @return 数据列表
      */
-    public List<Map<String, String>> readDatas(File dataFile) {
+    private List<Map<String, String>> readDatas(File dataFile) {
         List<Map<String, String>> dataMapList = new ArrayList<>();
 
         try (
@@ -445,7 +445,7 @@ public class Table {
      * @param dataFile 数据文件
      * @return 数据列表
      */
-    public List<Map<String, String>> readDatasAndLineNum(File dataFile) {
+    private List<Map<String, String>> readDatasAndLineNum(File dataFile) {
         List<Map<String, String>> dataMapList = new ArrayList<>();
 
         try (
@@ -475,16 +475,156 @@ public class Table {
         return dataMapList;
     }
 
+
+    /**
+     * 读取对应索引文件的数据
+     *
+     * @return
+     */
     public List<Map<String, String>> read() {
         //索引文件***
         List<Map<String, String>> datas = new ArrayList<>();
+        //Set<File> fileSet = findFileSet(singleFilters);
         for (File file : dataFileSet) {
             datas.addAll(readDatas(file));
+            //datas.addAll(readDatas(file));
         }
         return datas;
     }
 
+    /**
+     * 读取对应索引文件的数据并投影
+     *@param projection 投影字段
+     * @return
+     */
+    public List<Map<String, String>> read(Set<String> projection) {
+        //索引文件***
+        List<Map<String, String>> datas = new ArrayList<>();
+        //Set<File> fileSet = findFileSet(singleFilters);
+        //对所有文件读取数据
+        for (File file : dataFileSet) {
+            //读取数据
+            List<Map<String, String>> srcDatas = readDatas(file);
+            //遍历每条数据
+            for (Map<String, String> srcData : srcDatas) {
+                Map<String, String> data = new LinkedHashMap<>();
+                //将投影的数据提取出来
+                for (String fieldName : projection) {
+                    data.put(fieldName, srcData.get(fieldName));
+                }
+                datas.add(data);
+            }
+            //datas.addAll(readDatas(file));
+            //datas.addAll(readDatas(file));
+        }
 
+        return datas;
+    }
+
+    /**
+     * 读取对应索引文件的数据并过滤
+     *@param singleFilters 过滤器
+     * @return
+     */
+    public List<Map<String, String>> read(List<SingleFilter> singleFilters) {
+        //索引文件***
+        List<Map<String, String>> datas = new ArrayList<>();
+        Set<File> fileSet = findFileSet(singleFilters);
+        for (File file : fileSet) {
+            datas.addAll(readFilter(file, singleFilters));
+            //datas.addAll(readDatas(file));
+        }
+
+        return datas;
+    }
+
+
+    /**
+     * 读取对应索引文件的数据过滤并投影
+     * @param singleFilters 过滤器
+     * @param projection 投影字段
+     * @return
+     */
+    public List<Map<String, String>> read(List<SingleFilter> singleFilters, Set<String> projection) {
+        //索引文件***
+        List<Map<String, String>> datas = new ArrayList<>();
+        Set<File> fileSet = findFileSet(singleFilters);
+        for (File file : fileSet) {
+            //读取数据
+            List<Map<String, String>> srcDatas = readDatas(file);
+            //遍历每条数据
+            for (Map<String, String> srcData : srcDatas) {
+                Map<String, String> data = new LinkedHashMap<>();
+                //将投影的数据提取出来
+                for (String fieldName : projection) {
+                    data.put(fieldName, srcData.get(fieldName));
+                }
+                datas.add(data);
+            }
+        }
+
+        return datas;
+    }
+
+
+  /*  *//**
+     * 读取指定文件的数据
+     * @param file
+     * @return
+     *//*
+    private List<Map<String, String>> readFilter(File file) {
+        //读取数据文件
+        List<Map<String, String>> srcDatas = readDatas(file);
+        List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
+        //循环过滤
+        for (SingleFilter singleFilter : singleFilters) {
+            filtDatas = singleFilter.singleFiltData(filtDatas);
+        }
+        //将过滤的数据返回
+        return filtDatas;
+    }*/
+
+    /**
+     * 读取指定文件的数据并用where规则过滤
+     *
+     * @param file
+     * @param singleFilters
+     * @return
+     */
+    private List<Map<String, String>> readFilter(File file, List<SingleFilter> singleFilters) {
+        //读取数据文件
+        List<Map<String, String>> srcDatas = readDatas(file);
+        List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
+        //循环过滤
+        for (SingleFilter singleFilter : singleFilters) {
+            filtDatas = singleFilter.singleFiltData(filtDatas);
+        }
+        //将过滤的数据返回
+        return filtDatas;
+    }
+    /**
+     * 读取指定文件的数据并用where规则过滤并进行投影操作
+     * @param file 对应文件
+     * @param singleFilters 过滤器
+     * @param projection 投影信息
+     * @return private List<Map<String, String>> readFilter(File file,List<SingleFilter> singleFilters,Set<String> projection) {
+    //读取数据文件
+    List<Map<String, String>> srcDatas = readDatas(file);
+    List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
+    //循环过滤
+    for (SingleFilter singleFilter : singleFilters) {
+    filtDatas = singleFilter.singleFiltData(filtDatas);
+    }
+    //将过滤的数据返回
+    return filtDatas;
+    }*/
+
+    /**
+     * 将数据写入对应的文件
+     *
+     * @param dataFile
+     * @param datas
+     */
     private void writeDatas(File dataFile, List<Map<String, String>> datas) {
         if (dataFile.exists()) {
             dataFile.delete();
@@ -621,7 +761,7 @@ public class Table {
     /**
      * 为每个属性建立索引树，如果此属性值为[NULL]索引树将排除此条字段
      */
-    public void buildIndex() {
+    private void buildIndex() {
         indexMap = new HashMap<>();
         File[] dataFiles = new File(folder, "data").listFiles();
         //每个文件
