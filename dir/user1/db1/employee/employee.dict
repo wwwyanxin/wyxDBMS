@@ -1,0 +1,8 @@
+name varchar ^
+ssn varchar ^
+bdate varchar ^
+address varchar ^
+sex varchar ^
+salary varchar ^
+superssn varchar ^
+dno varchar ^

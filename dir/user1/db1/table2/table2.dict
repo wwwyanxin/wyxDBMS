@@ -1,0 +1,5 @@
+id int ^
+name varchar ^
+sex varchar ^
+height double ^
+school varchar ^
