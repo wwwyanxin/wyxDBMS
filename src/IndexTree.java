@@ -2,7 +2,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 
-public class IndexTree implements Serializable{
+public class IndexTree implements Serializable {
     private TreeMap<IndexKey, IndexNode> treeMap;
 
     public IndexTree() {
@@ -24,8 +24,10 @@ public class IndexTree implements Serializable{
             case LESS_THAN:
                 //此方法获得小于key的映射
                 indexNodeMap = treeMap.headMap(condition);
-                for (IndexNode node : indexNodeMap.values()) {
-                    indexNodeList.add(node);
+                if (null != indexNodeMap) {
+                    for (IndexNode node : indexNodeMap.values()) {
+                        indexNodeList.add(node);
+                    }
                 }
                 /*for (IndexNode node : indexNodeMap.values()) {
                     indexNodeList.add(node);
@@ -33,16 +35,20 @@ public class IndexTree implements Serializable{
                 break;
             case EQUAL_TO:
                 IndexNode indexNode = treeMap.get(condition);
-                indexNodeList.add(indexNode);
+                if (null != indexNode) {
+                    indexNodeList.add(indexNode);
+                }
                 break;
             case MORE_THAN:
                 //此方法获得大于等于key的映射，如果有等于那么要去掉等于key的映射
                 indexNodeMap = treeMap.tailMap(condition);
-                if (indexNodeMap.containsKey(condition)) {
-                    indexNodeMap.remove(condition);
-                }
-                for (IndexNode node : indexNodeMap.values()) {
-                    indexNodeList.add(node);
+                if (null != indexNodeMap) {
+                    if (indexNodeMap.containsKey(condition)) {
+                        indexNodeMap.remove(condition);
+                    }
+                    for (IndexNode node : indexNodeMap.values()) {
+                        indexNodeList.add(node);
+                    }
                 }
                 break;
             default:
@@ -65,12 +71,12 @@ public class IndexTree implements Serializable{
         return fileSet;
     }
 
-    public void put(IndexKey indexKey,IndexNode indexNode) {
-        treeMap.put(indexKey,indexNode);
+    public void put(IndexKey indexKey, IndexNode indexNode) {
+        treeMap.put(indexKey, indexNode);
     }
 
-    public void putIndex(IndexKey indexKey, String filePath,int lineNum) {
-        IndexNode indexNode=treeMap.get(indexKey);
+    public void putIndex(IndexKey indexKey, String filePath, int lineNum) {
+        IndexNode indexNode = treeMap.get(indexKey);
         //如果没有此节点，添加此节点
         if (null == indexNode) {
             treeMap.put(indexKey, new IndexNode());

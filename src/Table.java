@@ -108,10 +108,10 @@ public class Table {
 
         if (table.indexFile.exists()) {
             table.readIndex();
-        } else {
+        } /*else {
             table.buildIndex();
             //table.writeIndex();
-        }
+        }*/
 
         return table;
     }
@@ -551,7 +551,7 @@ public class Table {
         Set<File> fileSet = findFileSet(singleFilters);
         for (File file : fileSet) {
             //读取数据
-            List<Map<String, String>> srcDatas = readDatas(file);
+            List<Map<String, String>> srcDatas = readFilter(file,singleFilters);
             //遍历每条数据
             for (Map<String, String> srcData : srcDatas) {
                 Map<String, String> data = new LinkedHashMap<>();

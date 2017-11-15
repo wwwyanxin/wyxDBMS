@@ -189,9 +189,12 @@ class QianFangJiaoHui implements Check
     public void result()
     {
         String s1="P1点的坐标为：("+three(x)+","+three(y)+")";
-        String s2="P1到A点的距离为："+three(d_pa)+"    "+"A-P1的方位角为："+BigDecimal.valueOf(Double.parseDouble(dmss(alpha_a))).setScale(0, BigDecimal.ROUND_HALF_UP);
-        String s3="P1到B点的距离为："+three(d_pb)+"    "+"B-P1的方位角为："+ BigDecimal.valueOf(Double.parseDouble(dmss(alpha_b))).setScale(0, BigDecimal.ROUND_HALF_UP);
-        String s4="P1到C点的距离为："+three(d_pc)+"    "+"C-P1的方位角为："+ BigDecimal.valueOf(Double.parseDouble(dmss(alpha_c))).setScale(0, BigDecimal.ROUND_HALF_UP);
+        //String s2="P1到A点的距离为："+three(d_pa)+"    "+"A-P1的方位角为："+BigDecimal.valueOf(Double.parseDouble(dmss(alpha_a))).setScale(0, BigDecimal.ROUND_HALF_UP);
+        //String s3="P1到B点的距离为："+three(d_pb)+"    "+"B-P1的方位角为："+ BigDecimal.valueOf(Double.parseDouble(dmss(alpha_b))).setScale(0, BigDecimal.ROUND_HALF_UP);
+        //String s4="P1到C点的距离为："+three(d_pc)+"    "+"C-P1的方位角为："+ BigDecimal.valueOf(Double.parseDouble(dmss(alpha_c))).setScale(0, BigDecimal.ROUND_HALF_UP);
+        String s2 = "P1到A点的距离为：" + three(d_pa) + "    " + "A-P1的方位角为：" + dmss(alpha_a);
+        String s3 = "P1到B点的距离为：" + three(d_pb) + "    " + "B-P1的方位角为：" + dmss(alpha_b);
+        String s4 = "P1到C点的距离为：" + three(d_pc) + "    " + "C-P1的方位角为：" + dmss(alpha_c);
 
         try
         {
@@ -245,7 +248,7 @@ class QianFangJiaoHui implements Check
 }//前方交会
 
 
-class SideIntersection implements Check
+class CeFangJiaoHui implements Check
 {
     public double x1;  //A的x坐标
     public double y1;  //A的y坐标
@@ -268,7 +271,7 @@ class SideIntersection implements Check
     public double alpha_b; //BP2的方位角
     public double alpha_c; //CP2的方位角
     public double _b;      //B角内角的弧度值
-    public SideIntersection(double a,double b,double c,double d,double e,double f,double g,double h,double i)
+    public CeFangJiaoHui(double a, double b, double c, double d, double e, double f, double g, double h, double i)
     {
         x1=a;
         y1=b;
@@ -495,7 +498,7 @@ public class JiaoHuiZuoYe
                 String s7=String.valueOf(_c);
                 _c= QianFangJiaoHui.qt(s7);
 
-                SideIntersection si=new SideIntersection(x1,y1,x2,y2,x3,y3,aaa2,pp2,_c);//侧方交会
+                CeFangJiaoHui si=new CeFangJiaoHui(x1,y1,x2,y2,x3,y3,aaa2,pp2,_c);//侧方交会
                 System.out.println("您选择的是侧方交会，结果如下：");
                 si.zuoBiao();      //求侧方交会待定点坐标
                 si.DIS();     //求两点间的距离

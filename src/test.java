@@ -162,24 +162,155 @@ public class test {
             while (matcherSelect.find()) {
 
 
-                //List<Map<String, String>> datas = new ArrayList<>();
-                Map<String, Field> fieldMap = new LinkedHashMap<>();
+
                 //将读到的所有数据放到tableDatasMap中
                 Map<String, List<Map<String, String>>> talbeDatasMap = new LinkedHashMap<>();
+                //将需要显示的字段名按table.filed的型式存入dataNameList
+                List<String> dataNameList = new ArrayList<>();
 
-                //查询一个表并且没有条件 select * from table;
+                // select * from table1,table2;
                 if ("*".equals(matcherSelect.group(1)) && null == matcherSelect.group(3)) {
-                    List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
 
+                    List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
                     for (String tableName : tableNames) {
                         Table table = Table.getTable(tableName);
                         if (null == table) {
                             System.out.println("未找到表：" + tableName);
                             break;
                         }
+                        Map<String, Field> fieldMap = table.getFieldMap();
                         //读取数据
                         List<Map<String, String>> datas = table.read();
-                        talbeDatasMap.put(tableName, datas);
+                        for (String fieldName : fieldMap.keySet()) {
+                            dataNameList.add(tableName+"."+fieldName);
+                        }
+                        if (0 != datas.size()) {
+                            talbeDatasMap.put(tableName, datas);
+                        }
+                    }
+                } else if (!"*".equals(matcherSelect.group(1)) && null == matcherSelect.group(3)) {
+                    // select table.id name from table1,table2;
+                    List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
+                    for (String tableName : tableNames) {
+                        Table table = Table.getTable(tableName);
+                        if (null == table) {
+                            System.out.println("未找到表：" + tableName);
+                            break;
+                        }
+
+                        Map<String, Field> fieldMap = table.getFieldMap();
+                        //解析投影
+                        Set<String> projection = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
+
+                        //读取数据
+                        List<Map<String, String>> datas;
+                        //如果存在此表的投影项
+                        if (0 != projection.size()) {
+                             datas= table.read(projection);
+                            for (String projectionName : projection) {
+                                dataNameList.add(tableName+"."+projectionName);
+                            }
+                        } else {
+                            datas = table.read();
+                            for (String fieldName : fieldMap.keySet()) {
+                                dataNameList.add(tableName+"."+fieldName);
+                            }
+                        }
+                        if (0 != datas.size()) {
+                            talbeDatasMap.put(tableName, datas);
+                        }
+                    }
+                } else if ("*".equals(matcherSelect.group(1)) && null != matcherSelect.group(3)) {
+                    // select * from table1,table2 where table1.id>10 and height<1.8
+                    List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
+                    for (String tableName : tableNames) {
+                        Table table = Table.getTable(tableName);
+                        if (null == table) {
+                            System.out.println("未找到表：" + tableName);
+                            break;
+                        }
+
+                        Map<String, Field> fieldMap = table.getFieldMap();
+                        //解析选择
+                        List<SingleFilter> singleFilters = new ArrayList<>();
+                        List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3),tableName,fieldMap);
+                        for (Map<String, String> filtMap : filtList) {
+                            SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
+                                    , filtMap.get("relationshipName"), filtMap.get("condition"));
+
+                            singleFilters.add(singleFilter);
+                        }
+
+
+                        //读取数据
+                        List<Map<String, String>> datas;
+                        //如果存在此表的选择项
+                        if (0 != singleFilters.size()) {
+                            datas= table.read(singleFilters);
+                            for (String fieldName : fieldMap.keySet()) {
+                                dataNameList.add(tableName+"."+fieldName);
+                            }
+                        } else {
+                            datas = table.read();
+                            for (String fieldName : fieldMap.keySet()) {
+                                dataNameList.add(tableName+"."+fieldName);
+                            }
+                        }
+                        if (0 != datas.size()) {
+                            talbeDatasMap.put(tableName, datas);
+                        }
+                    }
+                }else if (!"*".equals(matcherSelect.group(1)) && null != matcherSelect.group(3)) {
+                    // select table.id,height from table1,table2 where table1.id>10 and height<1.8
+                    List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
+                    for (String tableName : tableNames) {
+                        Table table = Table.getTable(tableName);
+                        if (null == table) {
+                            System.out.println("未找到表：" + tableName);
+                            break;
+                        }
+
+                        Map<String, Field> fieldMap = table.getFieldMap();
+                        //解析投影
+                        Set<String> projection = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
+                        //解析选择
+                        List<SingleFilter> singleFilters = new ArrayList<>();
+                        List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3),tableName,fieldMap);
+                        for (Map<String, String> filtMap : filtList) {
+                            SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
+                                    , filtMap.get("relationshipName"), filtMap.get("condition"));
+
+                            singleFilters.add(singleFilter);
+                        }
+
+
+                        //读取数据
+                        List<Map<String, String>> datas;
+                        //如果存在此表的投影项和选择项
+                        if (0 != projection.size()&&0!=singleFilters.size()) {
+                            datas= table.read(singleFilters,projection);
+                            for (String projectionName : projection) {
+                                dataNameList.add(tableName+"."+projectionName);
+                            }
+                        } else if (0 != projection.size()) {
+                            datas = table.read(projection);
+                            for (String projectionName : projection) {
+                                dataNameList.add(tableName+"."+projectionName);
+                            }
+                        } else if (0 != singleFilters.size()) {
+                            datas = table.read(singleFilters);
+                            for (String fieldName : fieldMap.keySet()) {
+                                dataNameList.add(tableName+"."+fieldName);
+                            }
+                        } else {
+                            datas = table.read();
+                            for (String fieldName : fieldMap.keySet()) {
+                                dataNameList.add(tableName+"."+fieldName);
+                            }
+                        }
+                        if (0 != datas.size()) {
+                            talbeDatasMap.put(tableName, datas);
+                        }
                     }
                 }
 
@@ -246,10 +377,43 @@ public class test {
                         }
 
                     }
-
-                    for (List<String> carProline : cartesianProduct) {
-                        System.out.println(carProline);
+                    //计算名字长度，用来对齐数据
+                    int[] lengh = new int[dataNameList.size()];
+                    Iterator<String> dataNames = dataNameList.iterator();
+                    for (int i = 0; i < dataNameList.size(); i++) {
+                        String dataName=dataNames.next();
+                        lengh[i] = dataName.length();
+                        System.out.printf("|%s", dataName);
                     }
+                    /*for (String dataName : dataNameList) {
+                        System.out.printf("|%s\t", dataName);
+                    }*/
+                    System.out.println("|");
+                    System.out.println();
+                    for (List<String> carProLine : cartesianProduct) {
+                        Iterator<String> carProDatas = carProLine.iterator();
+                        for (int i = 0; i < carProLine.size(); i++) {
+                            String carProData = carProDatas.next();
+                            System.out.printf("|%s",carProData);
+                            for (int j = 0; j < lengh[i]-carProData.length(); j++) {
+                                System.out.printf(" ");
+                            }
+                            /*try {
+                                for (int j = 0; j < lengh[i]-carProData.getBytes("utf-8").length; j++) {
+                                    System.out.printf(" ");
+                                }
+                            } catch (UnsupportedEncodingException e) {
+                                e.printStackTrace();
+                            }*/
+                        }
+                        /*for (String carProData : carProLine) {
+                            System.out.printf("|%s\t",carProData);
+                        }*/
+                        System.out.println("|");
+                    }
+                    /*for (List<String> carProline : cartesianProduct) {
+                        System.out.println(carProline);
+                    }*/
 
 
                     /*for (List<Map<String, String>> tableDataValues : talbeDatasMap.values()) {
