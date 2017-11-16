@@ -6,6 +6,7 @@ public class SingleReplace {
         char[] zimubiao = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         char[] mimabiao = Arrays.copyOf(zimubiao,26);
         Scanner sc = new Scanner(System.in);
+        System.out.println("输入秘钥");
         String key = sc.nextLine();
         char[] keys = key.toCharArray();
         Set keySet = new LinkedHashSet();
@@ -20,6 +21,7 @@ public class SingleReplace {
         while (iterator.hasNext()) {
             mimabiao[i++] = iterator.next();
         }
+        System.out.println("输入明文");
         String mingwen = sc.nextLine();
         char[] mingwens = mingwen.toCharArray();
         char[] password = new char[mingwens.length];

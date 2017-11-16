@@ -310,7 +310,7 @@ public class Operating {
             System.out.println("|");
             for (int ls : lengh) {
                 for (int l = 0; l <=ls ; l++) {
-                    System.out.printf("_");
+                    System.out.printf("-");
                 }
             }
             System.out.println();

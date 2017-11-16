@@ -1,9 +1,8 @@
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Random;
 import java.util.Scanner;
 
-public class RAS {
+public class RSA {
     private static boolean isPrime(int number) {
         for (int i = 2; i < number; i++) {
             if (0 == number % i) {
@@ -45,18 +44,9 @@ public class RAS {
             k++;
         }
     }
-/*    public static BigInteger ss(int m,int n){
-        BigInteger result=BigInteger.valueOf(1);
-        int i=0;
-        while(i<n){
-            result=result.multiply(BigInteger.valueOf(m));
-            i++;
-        }
+    public static BigDecimal encryption(int e, int n,long m) {
+        BigDecimal result =BigDecimal.valueOf(m).pow(e).remainder(BigDecimal.valueOf(n));
         return result;
-    }*/
-
-    public static double encryption(int e, int n,long m) {
-        return (Math.pow(m, e) % n);
     }
     public static BigDecimal decryption(int d, int n,int c) {
         BigDecimal result =BigDecimal.valueOf(c).pow(d).remainder(BigDecimal.valueOf(n));
@@ -65,9 +55,9 @@ public class RAS {
 
     public static void main(String[] args) {
         int p,q;
-        p = RAS.createPrime();
+        p = RSA.createPrime();
         while (true) {
-            if (p != (q = RAS.createPrime())) {
+            if (p != (q = RSA.createPrime())) {
                 break;
             }
         }
@@ -75,14 +65,15 @@ public class RAS {
         q=17;*/
         int n=p*q;
         int fn = (p - 1) * (q - 1);
-        int e = RAS.eachPrime(fn);
-        int d = RAS.reciprocal(e, fn);
-
+        int e = RSA.eachPrime(fn);
+        int d = RSA.reciprocal(e, fn);
+        System.out.println("输入整数明文");
         Scanner sc = new Scanner(System.in);
         int m = sc.nextInt();
-        System.out.println(RAS.encryption(e, n, m));
+        System.out.println(RSA.encryption(e, n, m));
+        System.out.println("输入整数密文");
         int c = sc.nextInt();
-        System.out.println(RAS.decryption(d, n, c));
+        System.out.println(RSA.decryption(d, n, c));
     }
 
 }
