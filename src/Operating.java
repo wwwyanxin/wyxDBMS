@@ -12,10 +12,22 @@ public class Operating {
     private static final Pattern patternDropTable = Pattern.compile("drop\\stable\\s(\\w+);");
     private static final Pattern patternSelect = Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+(?:\\.\\w+)?)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
     private static final Pattern patternDeleteIndex = Pattern.compile("delete\\sindex\\s(\\w+)\\s?;");
+    private static final Pattern patternGrantAdmin = Pattern.compile("grant\\sadmin\\sto\\s([^;\\s]+)\\s?;");
+    private static final Pattern patternRevokeAdmin = Pattern.compile("revoke\\sadmin\\sfrom\\s([^;\\s]+)\\s?;");
 
 
-    public  void dbms() {
-        User user = new User("user1", "abc");
+    public void dbms() {
+        //User user = new User("user1", "abc");
+        User user = User.getUser("user1", "abc");
+        if (null == user) {
+            System.out.println("已退出dbms");
+            return;
+        } else {
+            System.out.println(user.getName() + "登陆成功!");
+        }
+        //User.grant(user.getName(), User.READ_ONLY);
+        //user.grant(User.READ_ONLY);
+
         //默认进入user1用户文件夹
         File userFolder = new File("dir", user.getName());
 
@@ -29,6 +41,8 @@ public class Operating {
         Scanner sc = new Scanner(System.in);
         String cmd;
         while (!"exit".equals(cmd = sc.nextLine())) {
+            Matcher matcherGrantAdmin = patternGrantAdmin.matcher(cmd);
+            Matcher matcherRevokeAdmin = patternRevokeAdmin.matcher(cmd);
             Matcher matcherInsert = patternInsert.matcher(cmd);
             Matcher matcherCreateTable = patternCreateTable.matcher(cmd);
             Matcher matcherAlterTable_add = patternAlterTable_add.matcher(cmd);
@@ -38,39 +52,93 @@ public class Operating {
             Matcher matcherSelect = patternSelect.matcher(cmd);
             Matcher matcherDeleteIndex = patternDeleteIndex.matcher(cmd);
 
+            while (matcherGrantAdmin.find()) {
+                User grantUser = User.getUser(matcherGrantAdmin.group(1));
+                if (null == grantUser) {
+                    System.out.println("授权失败！");
+                } else if (user.getName().equals(grantUser.getName())) {
+                    //如果是当前操作的用户，就直接更改当前用户权限
+                    user.grant(User.ADMIN);
+                    System.out.println("用户:" + user.getName() + "授权成功！");
+                } else {
+                    grantUser.grant(User.ADMIN);
+                    System.out.println("用户:" + grantUser.getName() + "授权成功!");
+                }
+            }
+
+            while (matcherRevokeAdmin.find()) {
+                User revokeUser = User.getUser(matcherRevokeAdmin.group(1));
+                if (null == revokeUser) {
+                    System.out.println("取消授权失败!");
+                }
+                if (user.getName().equals(revokeUser.getName())) {
+                    //如果是当前操作的用户，就直接更改当前用户权限
+                    user.grant(User.READ_ONLY);
+                    System.out.println("用户:" + user.getName() + "已取消授权！");
+                } else {
+                    revokeUser.grant(User.READ_ONLY);
+                    System.out.println("用户:" + revokeUser.getName() + "已取消授权！");
+                }
+            }
 
             while (matcherAlterTable_add.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 alterTableAdd(matcherAlterTable_add);
             }
 
             while (matcherDropTable.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 dropTable(matcherDropTable);
             }
 
 
             while (matcherCreateTable.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 createTable(matcherCreateTable);
             }
 
             while (matcherDelete.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 delete(matcherDelete);
             }
 
             while (matcherUpdate.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 update(matcherUpdate);
             }
 
             while (matcherInsert.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 insert(matcherInsert);
             }
 
             while (matcherSelect.find()) {
                 select(matcherSelect);
-
-
             }
 
             while (matcherDeleteIndex.find()) {
+                if (user.getLevel() != User.ADMIN) {
+                    System.out.println("用户" + user.getName() + "权限不够，无法完成此操作！");
+                    break;
+                }
                 deleteIndex(matcherDeleteIndex);
             }
         }
@@ -103,7 +171,7 @@ public class Operating {
                 //读取数据
                 List<Map<String, String>> datas = table.read();
                 for (String fieldName : fieldMap.keySet()) {
-                    dataNameList.add(tableName+"."+fieldName);
+                    dataNameList.add(tableName + "." + fieldName);
                 }
                 if (0 != datas.size()) {
                     talbeDatasMap.put(tableName, datas);
@@ -124,12 +192,12 @@ public class Operating {
                 Set<String> projection = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
 
                 //读取数据
-                List<Map<String, String>> datas=new ArrayList<>();
+                List<Map<String, String>> datas = new ArrayList<>();
                 //如果存在此表的投影项
                 if (0 != projection.size()) {
-                     datas= table.read(projection);
+                    datas = table.read(projection);
                     for (String projectionName : projection) {
-                        dataNameList.add(tableName+"."+projectionName);
+                        dataNameList.add(tableName + "." + projectionName);
                     }
                 } /*else {
                     datas = table.read();
@@ -154,7 +222,7 @@ public class Operating {
                 Map<String, Field> fieldMap = table.getFieldMap();
                 //解析选择
                 List<SingleFilter> singleFilters = new ArrayList<>();
-                List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3),tableName,fieldMap);
+                List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3), tableName, fieldMap);
                 for (Map<String, String> filtMap : filtList) {
                     SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
                             , filtMap.get("relationshipName"), filtMap.get("condition"));
@@ -167,21 +235,21 @@ public class Operating {
                 List<Map<String, String>> datas;
                 //如果存在此表的选择项
                 if (0 != singleFilters.size()) {
-                    datas= table.read(singleFilters);
+                    datas = table.read(singleFilters);
                     for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName+"."+fieldName);
+                        dataNameList.add(tableName + "." + fieldName);
                     }
                 } else {
                     datas = table.read();
                     for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName+"."+fieldName);
+                        dataNameList.add(tableName + "." + fieldName);
                     }
                 }
                 if (0 != datas.size()) {
                     talbeDatasMap.put(tableName, datas);
                 }
             }
-        }else if (!"*".equals(matcherSelect.group(1)) && null != matcherSelect.group(3)) {
+        } else if (!"*".equals(matcherSelect.group(1)) && null != matcherSelect.group(3)) {
             // select table.id,height from table1,table2 where table1.id>10 and height<1.8
             List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
             for (String tableName : tableNames) {
@@ -196,7 +264,7 @@ public class Operating {
                 Set<String> projection = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
                 //解析选择
                 List<SingleFilter> singleFilters = new ArrayList<>();
-                List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3),tableName,fieldMap);
+                List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3), tableName, fieldMap);
                 for (Map<String, String> filtMap : filtList) {
                     SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
                             , filtMap.get("relationshipName"), filtMap.get("condition"));
@@ -206,17 +274,17 @@ public class Operating {
 
 
                 //读取数据
-                List<Map<String, String>> datas=new ArrayList<>();
+                List<Map<String, String>> datas = new ArrayList<>();
                 //如果存在此表的投影项和选择项
-                if (0 != projection.size()&&0!=singleFilters.size()) {
-                    datas= table.read(singleFilters,projection);
+                if (0 != projection.size() && 0 != singleFilters.size()) {
+                    datas = table.read(singleFilters, projection);
                     for (String projectionName : projection) {
-                        dataNameList.add(tableName+"."+projectionName);
+                        dataNameList.add(tableName + "." + projectionName);
                     }
                 } else if (0 != projection.size()) {
                     datas = table.read(projection);
                     for (String projectionName : projection) {
-                        dataNameList.add(tableName+"."+projectionName);
+                        dataNameList.add(tableName + "." + projectionName);
                     }
                 } else if (0 != singleFilters.size()) {
                     datas = table.read(singleFilters);
@@ -302,14 +370,14 @@ public class Operating {
             int[] lengh = new int[dataNameList.size()];
             Iterator<String> dataNames = dataNameList.iterator();
             for (int i = 0; i < dataNameList.size(); i++) {
-                String dataName=dataNames.next();
+                String dataName = dataNames.next();
                 lengh[i] = dataName.length();
                 System.out.printf("|%s", dataName);
             }
 
             System.out.println("|");
             for (int ls : lengh) {
-                for (int l = 0; l <=ls ; l++) {
+                for (int l = 0; l <= ls; l++) {
                     System.out.printf("-");
                 }
             }
@@ -318,8 +386,8 @@ public class Operating {
                 Iterator<String> carProDatas = carProLine.iterator();
                 for (int i = 0; i < carProLine.size(); i++) {
                     String carProData = carProDatas.next();
-                    System.out.printf("|%s",carProData);
-                    for (int j = 0; j < lengh[i]-carProData.length(); j++) {
+                    System.out.printf("|%s", carProData);
+                    for (int j = 0; j < lengh[i] - carProData.length(); j++) {
                         System.out.printf(" ");
                     }
                 }

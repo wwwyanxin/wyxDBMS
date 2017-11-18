@@ -827,22 +827,4 @@ public class Table {
         return fileSet;
     }
 
-
-    public static void main(String[] args) {
-        User user = new User("user1", "abc");
-        //默认进入user1用户文件夹
-        File userFolder = new File("dir", user.getName());
-
-        //默认进入user1的默认数据库db1
-        File dbFolder = new File(userFolder, "db1");
-
-
-        Table.init(user.getName(), dbFolder.getName());
-        Table table1 = Table.getTable("employee");
-
-        //table1.readIndex();
-
-        table1.buildIndex();
-        table1.writeIndex();
-    }
 }
