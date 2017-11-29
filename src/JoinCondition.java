@@ -58,7 +58,7 @@ public class JoinCondition {
      */
     public static boolean containsTable(List<JoinCondition> joinConditionList, String tableName) {
         for (JoinCondition joinCondition : joinConditionList) {
-            if (tableName.contains(joinCondition.tableName1 + ".")||tableName.contains(joinCondition.tableName2=".")) {
+            if (tableName.contains(joinCondition.tableName1 + ".")||tableName.contains(joinCondition.tableName2+".")) {
                 return true;
             }
         }

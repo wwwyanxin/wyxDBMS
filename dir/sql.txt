@@ -1,0 +1,8 @@
+select * from table4;
+
+select * from table4,table5;
+select table4.id from table4,table5;
+select table4.id from table4,table5 where table4.id=table5.id;
+select * from table4,table5 where table4.id=table5.id;
+select * from table4,table5 where table4.id=table5.id and table4.id>1 ;
+select table4.id,table5.name from table4,table5 where table4.id=table5.id and table4.id>1 ;

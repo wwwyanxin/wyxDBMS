@@ -66,8 +66,11 @@ public class Join {
         }
         for (Map<String, String> srcLine : srcProduct) {
             for (Map<String, String> joinLine : joinProduct) {
-                srcLine.putAll(joinLine);
-                result.add(srcLine);
+                Map<String, String> newLine = new LinkedHashMap<>();
+                newLine.putAll(srcLine);
+                newLine.putAll(joinLine);
+//                srcLine.putAll(joinLine);
+                result.add(newLine);
             }
         }
         return result;
@@ -87,8 +90,11 @@ public class Join {
             for (Map<String, String> joinLine : joinProduct) {
                 //如果与条件匹配,添加此行
                 if(Relationship.matchJionCondition(srcLine, joinLine, joinCondition)) {
-                    srcLine.putAll(joinLine);
-                    result.add(srcLine);
+                    Map<String, String> newLine = new LinkedHashMap<>();
+                    newLine.putAll(srcLine);
+                    newLine.putAll(joinLine);
+                    // srcLine.putAll(joinLine);
+                    result.add(newLine);
                 }
             }
         }
@@ -134,7 +140,8 @@ public class Join {
             //判断是否有连接条件
             if (JoinCondition.containsTable(joinConditionList,resultKey)) {
                 //只返回tableName
-                return resultKey.split("\\.")[0];
+                String tableName=resultKey.split("\\.")[0];
+                return tableName;
             }
         }
         return null;
