@@ -2,7 +2,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IndexKey implements Comparable,Serializable {
+public class IndexKey implements Comparable, Serializable {
     private String value;
     private String type;
 
@@ -12,26 +12,26 @@ public class IndexKey implements Comparable,Serializable {
     }
 
 
-
     @Override
     public int compareTo(Object ohterValue) {
-        String keyValue=((IndexKey)ohterValue).getValue();
-        switch (type) {
-            case "int":
-                return Integer.valueOf(value).compareTo(Integer.valueOf(keyValue));
-            case "double":
-                return Double.valueOf(value).compareTo(Double.valueOf(keyValue));
-            case "varchar":
-                return value.compareTo(String.valueOf(keyValue));
-            default:
-                try {
+        String keyValue = ((IndexKey) ohterValue).getValue();
+        try {
+            switch (type) {
+                case "int":
+                    return Integer.valueOf(value).compareTo(Integer.valueOf(keyValue));
+                case "double":
+                    return Double.valueOf(value).compareTo(Double.valueOf(keyValue));
+                case "varchar":
+                    return value.compareTo(String.valueOf(keyValue));
+                default:
                     throw new Exception("条件限定不匹配");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return 0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return 0;
     }
+
 
     @Override
     public boolean equals(Object o) {

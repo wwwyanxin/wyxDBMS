@@ -529,10 +529,14 @@ public class Table {
     public List<Map<String, String>> read(List<SingleFilter> singleFilters) {
         //索引文件***
         List<Map<String, String>> datas = new ArrayList<>();
-        Set<File> fileSet = findFileSet(singleFilters);
-        for (File file : fileSet) {
-            datas.addAll(readFilter(file, singleFilters));
-            //datas.addAll(readDatas(file));
+        if (null != singleFilters && 0 != singleFilters.size()) {
+            Set<File> fileSet = findFileSet(singleFilters);
+            for (File file : fileSet) {
+                datas.addAll(readFilter(file, singleFilters));
+                //datas.addAll(readDatas(file));
+            }
+        } else {
+            datas = read();
         }
 
         return datas;
@@ -552,7 +556,8 @@ public class Table {
         for (File file : fileSet) {
             //读取数据
             List<Map<String, String>> srcDatas = readFilter(file,singleFilters);
-            //遍历每条数据
+            datas = datasProjection(srcDatas, projection);
+            /*//遍历每条数据
             for (Map<String, String> srcData : srcDatas) {
                 Map<String, String> data = new LinkedHashMap<>();
                 //将投影的数据提取出来
@@ -560,29 +565,25 @@ public class Table {
                     data.put(fieldName, srcData.get(fieldName));
                 }
                 datas.add(data);
-            }
+            }*/
         }
 
         return datas;
     }
 
-
-  /*  *//**
-     * 读取指定文件的数据
-     * @param file
-     * @return
-     *//*
-    private List<Map<String, String>> readFilter(File file) {
-        //读取数据文件
-        List<Map<String, String>> srcDatas = readDatas(file);
-        List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
-        //循环过滤
-        for (SingleFilter singleFilter : singleFilters) {
-            filtDatas = singleFilter.singleFiltData(filtDatas);
+    public List<Map<String, String>> datasProjection(List<Map<String, String>> srcDatas,Set<String> projection) {
+        List<Map<String, String>> datas = new ArrayList<>();
+        //遍历每条数据
+        for (Map<String, String> srcData : srcDatas) {
+            Map<String, String> data = new LinkedHashMap<>();
+            //将投影的数据提取出来
+            for (String fieldName : projection) {
+                data.put(fieldName, srcData.get(fieldName));
+            }
+            datas.add(data);
         }
-        //将过滤的数据返回
-        return filtDatas;
-    }*/
+        return datas;
+    }
 
     /**
      * 读取指定文件的数据并用where规则过滤
@@ -602,22 +603,6 @@ public class Table {
         //将过滤的数据返回
         return filtDatas;
     }
-    /**
-     * 读取指定文件的数据并用where规则过滤并进行投影操作
-     * @param file 对应文件
-     * @param singleFilters 过滤器
-     * @param projection 投影信息
-     * @return private List<Map<String, String>> readFilter(File file,List<SingleFilter> singleFilters,Set<String> projection) {
-    //读取数据文件
-    List<Map<String, String>> srcDatas = readDatas(file);
-    List<Map<String, String>> filtDatas = new ArrayList<>(srcDatas);
-    //循环过滤
-    for (SingleFilter singleFilter : singleFilters) {
-    filtDatas = singleFilter.singleFiltData(filtDatas);
-    }
-    //将过滤的数据返回
-    return filtDatas;
-    }*/
 
     /**
      * 将数据写入对应的文件
@@ -789,16 +774,6 @@ public class Table {
                     IndexKey indexKey = new IndexKey(dataValue, dataType);
                     indexTree.putIndex(indexKey, dataFile.getAbsolutePath(), lineNum);
                 }
-                /*for (Map.Entry<String, String> dataEntry : data.entrySet()) {
-                    String dataName=dataEntry.getKey();
-                    String dataValue = dataEntry.getValue();
-                    int lineNum=dataEntry.
-                    String dataType=fieldMap.get(dataName).getType();
-
-
-                    indexTree.putIndex(indexKey,dataFile.getAbsolutePath());
-
-                }*/
             }
         }
 

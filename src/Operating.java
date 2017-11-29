@@ -4,16 +4,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Operating {
-    private static final Pattern patternInsert = Pattern.compile("insert\\s+into\\s+(\\w+)(\\(((\\w+,?)+)\\))?\\s+\\w+\\((([^\\)]+,?)+)\\);?");
-    private static final Pattern patternCreateTable = Pattern.compile("create\\stable\\s(\\w+)\\s?\\(((?:\\s?\\w+\\s\\w+,?)+)\\)\\s?;");
-    private static final Pattern patternAlterTable_add = Pattern.compile("alter\\stable\\s(\\w+)\\sadd\\s(\\w+\\s\\w+)\\s?;");
-    private static final Pattern patternDelete = Pattern.compile("delete\\sfrom\\s(\\w+)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
-    private static final Pattern patternUpdate = Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
-    private static final Pattern patternDropTable = Pattern.compile("drop\\stable\\s(\\w+);");
-    private static final Pattern patternSelect = Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+(?:\\.\\w+)?)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
-    private static final Pattern patternDeleteIndex = Pattern.compile("delete\\sindex\\s(\\w+)\\s?;");
-    private static final Pattern patternGrantAdmin = Pattern.compile("grant\\sadmin\\sto\\s([^;\\s]+)\\s?;");
-    private static final Pattern patternRevokeAdmin = Pattern.compile("revoke\\sadmin\\sfrom\\s([^;\\s]+)\\s?;");
+    private static final Pattern PATTERN_INSERT = Pattern.compile("insert\\s+into\\s+(\\w+)(\\(((\\w+,?)+)\\))?\\s+\\w+\\((([^\\)]+,?)+)\\);?");
+    private static final Pattern PATTERN_CREATE_TABLE = Pattern.compile("create\\stable\\s(\\w+)\\s?\\(((?:\\s?\\w+\\s\\w+,?)+)\\)\\s?;");
+    private static final Pattern PATTERN_ALTER_TABLE_ADD = Pattern.compile("alter\\stable\\s(\\w+)\\sadd\\s(\\w+\\s\\w+)\\s?;");
+    private static final Pattern PATTERN_DELETE = Pattern.compile("delete\\sfrom\\s(\\w+)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
+    private static final Pattern PATTERN_UPDATE = Pattern.compile("update\\s(\\w+)\\sset\\s(\\w+\\s?=\\s?[^,\\s]+(?:\\s?,\\s?\\w+\\s?=\\s?[^,\\s]+)*)(?:\\swhere\\s(\\w+\\s?[<=>]\\s?[^\\s\\;]+(?:\\sand\\s(?:\\w+)\\s?(?:[<=>])\\s?(?:[^\\s\\;]+))*))?\\s?;");
+    private static final Pattern PATTERN_DROP_TABLE = Pattern.compile("drop\\stable\\s(\\w+);");
+    private static final Pattern PATTERN_SELECT = Pattern.compile("select\\s(\\*|(?:(?:\\w+(?:\\.\\w+)?)+(?:\\s?,\\s?\\w+(?:\\.\\w+)?)*))\\sfrom\\s(\\w+(?:\\s?,\\s?\\w+)*)(?:\\swhere\\s([^\\;]+))?\\s?;");
+    private static final Pattern PATTERN_DELETE_INDEX = Pattern.compile("delete\\sindex\\s(\\w+)\\s?;");
+    private static final Pattern PATTERN_GRANT_ADMIN = Pattern.compile("grant\\sadmin\\sto\\s([^;\\s]+)\\s?;");
+    private static final Pattern PATTERN_REVOKE_ADMIN = Pattern.compile("revoke\\sadmin\\sfrom\\s([^;\\s]+)\\s?;");
 
 
     public void dbms() {
@@ -41,16 +41,16 @@ public class Operating {
         Scanner sc = new Scanner(System.in);
         String cmd;
         while (!"exit".equals(cmd = sc.nextLine())) {
-            Matcher matcherGrantAdmin = patternGrantAdmin.matcher(cmd);
-            Matcher matcherRevokeAdmin = patternRevokeAdmin.matcher(cmd);
-            Matcher matcherInsert = patternInsert.matcher(cmd);
-            Matcher matcherCreateTable = patternCreateTable.matcher(cmd);
-            Matcher matcherAlterTable_add = patternAlterTable_add.matcher(cmd);
-            Matcher matcherDelete = patternDelete.matcher(cmd);
-            Matcher matcherUpdate = patternUpdate.matcher(cmd);
-            Matcher matcherDropTable = patternDropTable.matcher(cmd);
-            Matcher matcherSelect = patternSelect.matcher(cmd);
-            Matcher matcherDeleteIndex = patternDeleteIndex.matcher(cmd);
+            Matcher matcherGrantAdmin = PATTERN_GRANT_ADMIN.matcher(cmd);
+            Matcher matcherRevokeAdmin = PATTERN_REVOKE_ADMIN.matcher(cmd);
+            Matcher matcherInsert = PATTERN_INSERT.matcher(cmd);
+            Matcher matcherCreateTable = PATTERN_CREATE_TABLE.matcher(cmd);
+            Matcher matcherAlterTable_add = PATTERN_ALTER_TABLE_ADD.matcher(cmd);
+            Matcher matcherDelete = PATTERN_DELETE.matcher(cmd);
+            Matcher matcherUpdate = PATTERN_UPDATE.matcher(cmd);
+            Matcher matcherDropTable = PATTERN_DROP_TABLE.matcher(cmd);
+            Matcher matcherSelect = PATTERN_SELECT.matcher(cmd);
+            Matcher matcherDeleteIndex = PATTERN_DELETE_INDEX.matcher(cmd);
 
             while (matcherGrantAdmin.find()) {
                 User grantUser = User.getUser(matcherGrantAdmin.group(1));
@@ -153,247 +153,114 @@ public class Operating {
 
     private void select(Matcher matcherSelect) {
         //将读到的所有数据放到tableDatasMap中
-        Map<String, List<Map<String, String>>> talbeDatasMap = new LinkedHashMap<>();
-        //将需要显示的字段名按table.filed的型式存入dataNameList
-        List<String> dataNameList = new ArrayList<>();
+        Map<String, List<Map<String, String>>> tableDatasMap = new LinkedHashMap<>();
 
-        // select * from table1,table2;
-        if ("*".equals(matcherSelect.group(1)) && null == matcherSelect.group(3)) {
+        //将投影放在Map<String,List<String>> projectionMap中
+        Map<String, List<String>> projectionMap = new LinkedHashMap<>();
 
-            List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
-            for (String tableName : tableNames) {
-                Table table = Table.getTable(tableName);
-                if (null == table) {
-                    System.out.println("未找到表：" + tableName);
-                    break;
-                }
-                Map<String, Field> fieldMap = table.getFieldMap();
-                //读取数据
-                List<Map<String, String>> datas = table.read();
-                for (String fieldName : fieldMap.keySet()) {
-                    dataNameList.add(tableName + "." + fieldName);
-                }
-                if (0 != datas.size()) {
-                    talbeDatasMap.put(tableName, datas);
-                }
+        //resultProduct
+        List<Map<String, String>> resultProduct = new ArrayList<>();
+
+        List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
+
+        String whereStr = matcherSelect.group(3);
+
+        //将tableName和table.fieldMap放入
+        Map<String, Map<String, Field>> fieldMaps = new HashMap();
+
+        for (String tableName : tableNames) {
+            Table table = Table.getTable(tableName);
+            if (null == table) {
+                System.out.println("未找到表：" + tableName);
+                return;
             }
-        } else if (!"*".equals(matcherSelect.group(1)) && null == matcherSelect.group(3)) {
-            // select table.id name from table1,table2;
-            List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
-            for (String tableName : tableNames) {
-                Table table = Table.getTable(tableName);
-                if (null == table) {
-                    System.out.println("未找到表：" + tableName);
-                    break;
-                }
+            Map<String, Field> fieldMap = table.getFieldMap();
+            fieldMaps.put(tableName, fieldMap);
 
-                Map<String, Field> fieldMap = table.getFieldMap();
-                //解析投影
-                Set<String> projection = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
+            //解析选择
+            List<SingleFilter> singleFilters = new ArrayList<>();
+            List<Map<String, String>> filtList = StringUtil.parseWhere(whereStr, tableName, fieldMap);
+            for (Map<String, String> filtMap : filtList) {
+                SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
+                        , filtMap.get("relationshipName"), filtMap.get("condition"));
 
-                //读取数据
-                List<Map<String, String>> datas = new ArrayList<>();
-                //如果存在此表的投影项
-                if (0 != projection.size()) {
-                    datas = table.read(projection);
-                    for (String projectionName : projection) {
-                        dataNameList.add(tableName + "." + projectionName);
-                    }
-                } /*else {
-                    datas = table.read();
-                    for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName+"."+fieldName);
-                    }
-                }*/
-                if (0 != datas.size()) {
-                    talbeDatasMap.put(tableName, datas);
-                }
+                singleFilters.add(singleFilter);
             }
-        } else if ("*".equals(matcherSelect.group(1)) && null != matcherSelect.group(3)) {
-            // select * from table1,table2 where table1.id>10 and height<1.8
-            List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
-            for (String tableName : tableNames) {
-                Table table = Table.getTable(tableName);
-                if (null == table) {
-                    System.out.println("未找到表：" + tableName);
-                    break;
-                }
 
-                Map<String, Field> fieldMap = table.getFieldMap();
-                //解析选择
-                List<SingleFilter> singleFilters = new ArrayList<>();
-                List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3), tableName, fieldMap);
-                for (Map<String, String> filtMap : filtList) {
-                    SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
-                            , filtMap.get("relationshipName"), filtMap.get("condition"));
-
-                    singleFilters.add(singleFilter);
-                }
+            //解析最终投影
+            List<String> projections = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
+            projectionMap.put(tableName, projections);
 
 
-                //读取数据
-                List<Map<String, String>> datas;
-                //如果存在此表的选择项
-                if (0 != singleFilters.size()) {
-                    datas = table.read(singleFilters);
-                    for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName + "." + fieldName);
-                    }
-                } else {
-                    datas = table.read();
-                    for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName + "." + fieldName);
-                    }
-                }
-                if (0 != datas.size()) {
-                    talbeDatasMap.put(tableName, datas);
-                }
-            }
-        } else if (!"*".equals(matcherSelect.group(1)) && null != matcherSelect.group(3)) {
-            // select table.id,height from table1,table2 where table1.id>10 and height<1.8
-            List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
-            for (String tableName : tableNames) {
-                Table table = Table.getTable(tableName);
-                if (null == table) {
-                    System.out.println("未找到表：" + tableName);
-                    break;
-                }
+            //读取数据并进行选择操作
+            List<Map<String, String>> srcDatas = table.read(singleFilters);
+            List<Map<String, String>> datas = associatedTableName(tableName, srcDatas);
 
-                Map<String, Field> fieldMap = table.getFieldMap();
-                //解析投影
-                Set<String> projection = StringUtil.parseProjection(matcherSelect.group(1), tableName, fieldMap);
-                //解析选择
-                List<SingleFilter> singleFilters = new ArrayList<>();
-                List<Map<String, String>> filtList = StringUtil.parseWhere(matcherSelect.group(3), tableName, fieldMap);
-                for (Map<String, String> filtMap : filtList) {
-                    SingleFilter singleFilter = new SingleFilter(fieldMap.get(filtMap.get("fieldName"))
-                            , filtMap.get("relationshipName"), filtMap.get("condition"));
-
-                    singleFilters.add(singleFilter);
-                }
-
-
-                //读取数据
-                List<Map<String, String>> datas = new ArrayList<>();
-                //如果存在此表的投影项和选择项
-                if (0 != projection.size() && 0 != singleFilters.size()) {
-                    datas = table.read(singleFilters, projection);
-                    for (String projectionName : projection) {
-                        dataNameList.add(tableName + "." + projectionName);
-                    }
-                } else if (0 != projection.size()) {
-                    datas = table.read(projection);
-                    for (String projectionName : projection) {
-                        dataNameList.add(tableName + "." + projectionName);
-                    }
-                } else if (0 != singleFilters.size()) {
-                    datas = table.read(singleFilters);
-                    /*for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName+"."+fieldName);
-                    }*/
-                } /*else {
-                    datas = table.read();
-                    for (String fieldName : fieldMap.keySet()) {
-                        dataNameList.add(tableName+"."+fieldName);
-                    }
-                }*/
-                if (0 != datas.size()) {
-                    talbeDatasMap.put(tableName, datas);
-                }
-            }
+            tableDatasMap.put(tableName, datas);
         }
 
-        //笛卡尔积
-        List<List<String>> cartesianProduct = new ArrayList<>();
-        Iterator<List<Map<String, String>>> tableIterator = talbeDatasMap.values().iterator();
-        if (tableIterator.hasNext()) {
-            //当前表
-            List<Map<String, String>> datasList1 = tableIterator.next();
 
-            for (Map<String, String> dataMap : datasList1) {
-                //将表的一行数据加入到dataLine
-                List<String> dataLine = new ArrayList<>();
-                for (String value : dataMap.values()) {
-                    dataLine.add(value);
-                }
-                cartesianProduct.add(dataLine);
-            }
-            //遍历剩下的表做笛卡尔积
-            while (tableIterator.hasNext()) {
-                //下一张表
-                List<Map<String, String>> datasList2 = tableIterator.next();
+        //解析连接条件，并创建连接对象jion
+        List<Map<String, String>> joinConditionMapList = StringUtil.parseWhere_join(whereStr, fieldMaps);
+        List<JoinCondition> joinConditionList = new LinkedList<>();
+        for (Map<String, String> joinMap : joinConditionMapList) {
+            String tableName1 = joinMap.get("tableName1");
+            String tableName2 = joinMap.get("tableName2");
+            String fieldName1 = joinMap.get("field1");
+            String fieldName2 = joinMap.get("field2");
+            Field field1 = fieldMaps.get(tableName1).get(fieldName1);
+            Field field2 = fieldMaps.get(tableName2).get(fieldName2);
+            String relationshipName = joinMap.get("relationshipName");
+            JoinCondition joinCondition = new JoinCondition(tableName1, tableName2, field1, field2, relationshipName);
 
-                //深拷贝到newCarPro;
-                List<List<String>> newCarPro = new ArrayList<>();
-                File cloneFile = new File("clone");
-                try (
-                        FileOutputStream fos = new FileOutputStream(cloneFile);
-                        ObjectOutputStream oos = new ObjectOutputStream(fos)
-                ) {
-                    oos.writeObject(cartesianProduct);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            joinConditionList.add(joinCondition);
 
-                //清空cartesianProduct
-                cartesianProduct.clear();
-                for (Map<String, String> dataMap : datasList2) {
-                    //将表的一行数据加入到dataLine
-                    List<String> dataLine = new ArrayList<>();
-                    for (String value : dataMap.values()) {
-                        dataLine.add(value);
-                    }
+            //将连接条件的字段加入投影中
+            projectionMap.get(tableName1).add(fieldName1);
+            projectionMap.get(tableName2).add(fieldName2);
+        }
 
-                    try (
-                            FileInputStream fis = new FileInputStream(cloneFile);
-                            ObjectInputStream ois = new ObjectInputStream(fis)
-                    ) {
-                        newCarPro = (List<List<String>>) ois.readObject();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                    for (List<String> newCarProLine : newCarPro) {
-                        newCarProLine.addAll(dataLine);
-                        //carProLine.addAll(dataLine);
-                    }
-                    cartesianProduct.addAll(newCarPro);
-                }
+        List<Map<String, String>> resultDatas = Join.joinData(tableDatasMap, joinConditionList, projectionMap);
+        //System.out.println(resultDatas);
 
-            }
-            //计算名字长度，用来对齐数据
-            int[] lengh = new int[dataNameList.size()];
-            Iterator<String> dataNames = dataNameList.iterator();
-            for (int i = 0; i < dataNameList.size(); i++) {
-                String dataName = dataNames.next();
-                lengh[i] = dataName.length();
-                System.out.printf("|%s", dataName);
+        //将需要显示的字段名按table.filed的型式存入dataNameList
+        List<String> dataNameList = new LinkedList<>();
+        for (Map.Entry<String, List<String>> projectionEntry : projectionMap.entrySet()) {
+            String projectionKey = projectionEntry.getKey();
+            List<String> projectionValues = projectionEntry.getValue();
+            for (String projectionValue : projectionValues) {
+                dataNameList.add(projectionKey + "." + projectionValue);
             }
 
-            System.out.println("|");
-            for (int ls : lengh) {
-                for (int l = 0; l <= ls; l++) {
-                    System.out.printf("-");
+        }
+
+        //计算名字长度，用来对齐数据
+        int[] lengh = new int[dataNameList.size()];
+        Iterator<String> dataNames = dataNameList.iterator();
+        for (int i = 0; i < dataNameList.size(); i++) {
+            String dataName = dataNames.next();
+            lengh[i] = dataName.length();
+            System.out.printf("|%s", dataName);
+        }
+
+        System.out.println("|");
+        for (int ls : lengh) {
+            for (int l = 0; l <= ls; l++) {
+                System.out.printf("-");
+            }
+        }
+        System.out.println();
+
+        for (Map<String, String> line : resultDatas) {
+            Iterator<String> valueIter = line.values().iterator();
+            for (int i = 0; i < lengh.length; i++) {
+                String value = valueIter.next();
+                System.out.printf("|%s", value);
+                for (int j = 0; j < lengh[i] - value.length(); j++) {
+                    System.out.printf(" ");
                 }
             }
             System.out.println();
-            for (List<String> carProLine : cartesianProduct) {
-                Iterator<String> carProDatas = carProLine.iterator();
-                for (int i = 0; i < carProLine.size(); i++) {
-                    String carProData = carProDatas.next();
-                    System.out.printf("|%s", carProData);
-                    for (int j = 0; j < lengh[i] - carProData.length(); j++) {
-                        System.out.printf(" ");
-                    }
-                }
-                System.out.println("|");
-            }
-
         }
     }
 
@@ -516,6 +383,25 @@ public class Operating {
         }
         System.out.println(table.addDict(fieldMap));
 
+    }
+
+    /**
+     * 将数据整理成tableName.fieldName dataValue的型式
+     *
+     * @param tableName 表名
+     * @param srcDatas  原数据
+     * @return 添加表名后的数据
+     */
+    private List<Map<String, String>> associatedTableName(String tableName, List<Map<String, String>> srcDatas) {
+        List<Map<String, String>> destDatas = new ArrayList<>();
+        for (Map<String, String> srcData : srcDatas) {
+            Map<String, String> destData = new LinkedHashMap<>();
+            for (Map.Entry<String, String> data : srcData.entrySet()) {
+                destData.put(tableName + "." + data.getKey(), data.getValue());
+            }
+            destDatas.add(destData);
+        }
+        return destDatas;
     }
 
 }
