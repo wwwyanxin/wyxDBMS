@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public class StringUtil {
     //匹配表的选择关系
-    private final static Pattern SINGLE_REL_PATTERN = Pattern.compile("(\\w+(?:\\.\\w+)?)\\s?([<=>])\\s?([^\\s\\;\\.]+)(?:\\sand|\\s?;)");
+    private final static Pattern SINGLE_REL_PATTERN = Pattern.compile("(\\w+(?:\\.\\w+)?)\\s?([<=>])\\s?([^\\s\\;\\.]+)[\\s;]");
     //匹配多个表的连接关系
     private final static Pattern JOIN_CONNECTION_REL_PATTERN = Pattern.compile("(\\w+(?:\\.\\w+)?)\\s?([<=>])\\s?(\\w+\\.\\w+)");
     // private final static Pattern updateSetPattern=Pattern.compile("(\\w+)\\s?=\\s?([^\\s\\;]+)")

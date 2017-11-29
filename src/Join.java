@@ -15,24 +15,25 @@ public class Join {
     public static List<Map<String, String>> joinData(Map<String, List<Map<String, String>>> tableDatasMap, List<JoinCondition> joinConditionList, Map<String, List<String>> projectionMap) {
         List<Map<String, String>> resultProduct = new LinkedList<>();
         for (Map.Entry<String, List<Map<String, String>>> datasEntry : tableDatasMap.entrySet()) {
-            //连接前进行一次投影
-            projection(datasEntry.getValue(), projectionMap);
 
             String tableName = datasEntry.getKey();
+            List<Map<String, String>>datas=datasEntry.getValue();
+            //连接前进行一次投影
+            datas=projection(datas, projectionMap);
 
             //在上次乘积中找存在连接条件的连接表
             String leftTableName = findTableName(resultProduct, joinConditionList);
             //如果没找到，做笛卡尔积
             if (null == leftTableName) {
-                resultProduct = cartesianProduct(resultProduct, datasEntry.getValue());
+                resultProduct = cartesianProduct(resultProduct, datas);
             } else {
                 JoinCondition joinCondition = JoinCondition.getConditionJoin(leftTableName, tableName, joinConditionList);
                 //如果只在上次乘积有连接条件，此表没有连接条件，做笛卡尔积
                 if (null == joinCondition) {
-                    resultProduct = cartesianProduct(resultProduct, datasEntry.getValue());
+                    resultProduct = cartesianProduct(resultProduct, datas);
                 } else {
                     //做条件连接
-                    resultProduct = joinProductByCondition(resultProduct, datasEntry.getValue(), joinCondition);
+                    resultProduct = joinProductByCondition(resultProduct, datas, joinCondition);
                     //将用于连接条件的投影去掉
                     List<String> projectionList1=projectionMap.get(joinCondition.getTableName1());
                     List<String> projectionList2=projectionMap.get(joinCondition.getTableName2());
@@ -45,7 +46,7 @@ public class Join {
                     projectionList2.remove(projectionList2.lastIndexOf(fieldName2));
 
                     //连接后进行一次投影
-                    projection(datasEntry.getValue(), projectionMap);
+                    resultProduct=projection(resultProduct, projectionMap);
                 }
             }
         }
@@ -100,7 +101,7 @@ public class Join {
             Map<String, String> resultLine = new LinkedHashMap<>();
             for (Map.Entry<String, List<String>> projectionEntry : projectionMap.entrySet()) {
                 String tableName = projectionEntry.getKey();
-                for (List<String> projections : projectionMap.values()) {
+                List<String> projections = projectionEntry.getValue();
                     for (String projection : projections) {
                         String projectionStr = tableName + "." + projection;
                         //如果投中，添加到结果集
@@ -109,7 +110,7 @@ public class Join {
                             resultLine.put(projectionStr, value);
                         }
                     }
-                }
+
             }
             result.add(resultLine);
         }
