@@ -1,3 +1,0 @@
-create table s1(name varchar,num int);
-insert into s1 values(s1,1);
-select table1.id,price,table2.id from table1,table3,table2 where table1.id>0 and weight>1 and price<100;
