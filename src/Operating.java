@@ -158,8 +158,6 @@ public class Operating {
         //将投影放在Map<String,List<String>> projectionMap中
         Map<String, List<String>> projectionMap = new LinkedHashMap<>();
 
-        //resultProduct
-        List<Map<String, String>> resultProduct = new ArrayList<>();
 
         List<String> tableNames = StringUtil.parseFrom(matcherSelect.group(2));
 
@@ -249,7 +247,7 @@ public class Operating {
                 System.out.printf("-");
             }
         }
-        System.out.println();
+        System.out.println("|");
 
         for (Map<String, String> line : resultDatas) {
             Iterator<String> valueIter = line.values().iterator();
@@ -260,7 +258,7 @@ public class Operating {
                     System.out.printf(" ");
                 }
             }
-            System.out.println();
+            System.out.println("|");
         }
     }
 
