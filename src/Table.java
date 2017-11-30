@@ -13,6 +13,7 @@ public class Table {
     private static String userName;//用户姓名，切换或修改用户时修改
     private static String dbName;//数据库dataBase名，切换时修改
 
+    //控制文件行数
     private static long lineNumConfine = 10;
 
     /**
