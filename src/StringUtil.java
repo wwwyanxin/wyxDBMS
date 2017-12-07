@@ -66,11 +66,11 @@ public class StringUtil {
     public static List<Map<String, String>> parseWhere(String str) {
 
         List<Map<String, String>> filtList = new LinkedList<>();
-
-        Matcher singleMatcher = SINGLE_REL_PATTERN.matcher(str);
+        //修改了正则规则，需要末尾加;或空格才能匹配
+        Matcher singleMatcher = SINGLE_REL_PATTERN.matcher(str + ";");
         while (singleMatcher.find()) {
             Map<String, String> filtMap = new LinkedHashMap<>();
-            singleMatcher.find();
+            //singleMatcher.find();
             filtMap.put("fieldName", singleMatcher.group(1));
             filtMap.put("relationshipName", singleMatcher.group(2));
             filtMap.put("condition", singleMatcher.group(3));
@@ -124,7 +124,8 @@ public class StringUtil {
 
     /**
      * 解析多表连接条件
-     * @param str where语句
+     *
+     * @param str       where语句
      * @param fieldMaps 连接的所有表的字段集合
      * @return
      */
@@ -141,13 +142,13 @@ public class StringUtil {
             Map<String, String> connRel = new LinkedHashMap<>();
             String leftStr = joinMatcher.group(1);
             String relationshipName = joinMatcher.group(2);
-            String rightStr=joinMatcher.group(3);
+            String rightStr = joinMatcher.group(3);
 
             String[] leftRel = leftStr.split("\\.");
-            String[] rightRel= rightStr.split("\\.");
+            String[] rightRel = rightStr.split("\\.");
 
-            if(null!=fieldMaps.get(leftRel[0])&&null!=fieldMaps.get(leftRel[0]).get(leftRel[1])
-                    &&null!=fieldMaps.get(rightRel[0])&&null!=fieldMaps.get(rightRel[0]).get(rightRel[1])) {
+            if (null != fieldMaps.get(leftRel[0]) && null != fieldMaps.get(leftRel[0]).get(leftRel[1])
+                    && null != fieldMaps.get(rightRel[0]) && null != fieldMaps.get(rightRel[0]).get(rightRel[1])) {
 
                 connRel.put("tableName1", leftRel[0]);
                 connRel.put("field1", leftRel[1]);
@@ -159,7 +160,7 @@ public class StringUtil {
             }
         }
         return joinConditionList;
-}
+    }
 
     /**
      * 解析创建表的字段语句
@@ -193,7 +194,8 @@ public class StringUtil {
         Map<String, String> dataMap = new LinkedHashMap<>();
         String[] setStrs = str.trim().split(",");
         for (String setStr : setStrs) {
-            Matcher relMatcher = SINGLE_REL_PATTERN.matcher(setStr);
+            //修改了正则规则，需要末尾加;或空格才能匹配
+            Matcher relMatcher = SINGLE_REL_PATTERN.matcher(setStr + ";");
             relMatcher.find();
             //将组1做为key，组3作为value
             dataMap.put(relMatcher.group(1), relMatcher.group(3));
